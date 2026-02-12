@@ -16,7 +16,7 @@
 \section{Global Architecture Overview}
 \label{ch:architecture}
 
-The HydrologicalTwin architecture is structured as a hierarchy of git-synchronized scientific objects. Identity is no longer managed by an \texttt{IdCard}; it is defined through deterministic Git provenance and environment fingerprinting. Every object that participates in the twin space-state must expose a \texttt{GitSynchroRecord}. This transformation removes symbolic identity in favor of computational ontology.
+The Hydrological Twin architecture is structured as a hierarchy of git-synchronized scientific objects. Identity is no longer managed by an \texttt{IdCard}; it is defined through deterministic Git provenance and environment fingerprinting. Every object that participates in the twin space-state must expose a \texttt{GitSynchroRecord}. This transformation removes symbolic identity in favor of computational ontology.
 
 \subsection{Architectural Principles}
 
@@ -243,7 +243,7 @@ Failure at any stage aborts the process.
 
 \subsection{Operational Rule}
 
-A HydrologicalTwin instance becomes ontologically valid only after:
+A Hydrological Twin instance becomes ontologically valid only after:
 
 \[
 \texttt{append\_validated} \rightarrow \texttt{git\_commit} \rightarrow \texttt{git\_push}
@@ -282,4 +282,4 @@ The architectural decomposition enforces:
 \item cryptographic traceability
 \end{itemize}
 
-HydrologicalTwin therefore operates not as a loose workflow, but as a formally structured git-synchronized space-state system in which every object, transformation and validation event is reproducible and audit-ready.
+Hydrological Twin therefore operates not as a loose workflow, but as a formally structured git-synchronized space-state system in which every object, transformation and validation event is reproducible and audit-ready.
