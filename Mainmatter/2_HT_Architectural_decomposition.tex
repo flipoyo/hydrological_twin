@@ -84,7 +84,7 @@ A \texttt{Compartment} represents a structured subspace of the hydrological syst
 It contains:
 
 \begin{itemize}
-\item one \texttt{Simulation}
+\item a list of \texttt{Simulation}
 \item Estimation Layer
 \item Analysis Layer
 \item Cartographic Layer
@@ -126,7 +126,6 @@ The Data Layer includes:
 \item Forcings (public by default)
 \item Model parameters (private by default)
 \item Observational products
-\item DataManifest
 \end{itemize}
 
 All data are content-addressed and hashed. Parameters are treated as data objects and therefore versioned equivalently.
