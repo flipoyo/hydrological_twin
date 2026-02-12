@@ -1,0 +1,228 @@
+% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%                                Packages import                             %
+% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+% Bibliography 
+\usepackage{natbib} 
+
+% Typo rules 
+\usepackage[french]{babel}        
+
+% Global language 
+\selectlanguage{french} 
+\usepackage{lipsum}
+
+% Font type class 
+\usepackage{mathpazo}  
+
+% --> Changing section font
+\usepackage{sectsty}                        
+\allsectionsfont{\sffamily}
+
+% Source input encoding 
+\usepackage[utf8]{inputenc}    
+
+% Source output encoding
+\usepackage[T1]{fontenc}    
+
+% For typographic adjustments
+\usepackage{microtype}    
+
+% Caption settings
+\usepackage[margin=17pt,font=small,labelfont={bf,sf}]{caption}     
+
+% Margins and page layout             
+\usepackage[verbose,tmargin=3cm,bmargin=3cm,
+            lmargin=2cm,rmargin=2cm,headheight=3cm,
+            headsep=0.5cm,footskip=0.8cm]{geometry}   
+            
+% Interline settings            
+\usepackage{setspace}                       
+\setstretch{1.1}
+
+% Comment package
+\usepackage{verbatim} 
+
+% Table packages
+\usepackage{multirow}                       
+\usepackage{multicol}
+\usepackage{arydshln}
+\usepackage{booktabs}
+
+% Figure placement
+\usepackage{float}                          
+\usepackage{graphicx}
+\usepackage{adjustbox}
+\usepackage{lscape}
+
+% Hyperlinks  
+\usepackage{url}                            
+\usepackage[breaklinks=true,unicode=true,colorlinks=true,
+            linkcolor=tablemat,citecolor=citation,
+            urlcolor=Blue,backref=page]{hyperref}
+
+% Math facilities            
+\usepackage{amsmath}                        
+
+% Cross-references settings
+\usepackage{cleveref}                       
+\crefname{figure}{Fig.}{Fig.}
+\crefname{table}{Tab.}{Tab.}
+\crefname{section}{Sec.}{Sec.}
+\crefname{equation}{Eq.}{Eq.}
+\crefname{lstlisting}{Ex.}{Ex.}
+
+\newcommand{\caw}{\href{https://gitlab.com/cawaqs/cawaqs}{\texttt{CaWaQS}\ }} 
+
+% To fill pages from the top
+\raggedbottom
+
+% Algorithm pkg
+\usepackage[]{algorithm2e}
+\usepackage{algpseudocode}
+\renewcommand{\algorithmcfname}{Algorithm}  
+
+% Symbols list  
+\usepackage{nomencl}                         
+
+% Itemize settings
+\usepackage{enumitem}                       
+\setlist[itemize]{label=$\bullet$, nosep, 
+        after=\vspace{0.2cm}}               
+\setlist{noitemsep}
+
+\usepackage{etoolbox}
+\makenomenclature
+
+% Color options
+\usepackage{color}                          
+\usepackage[dvipsnames,svgnames,table]{xcolor}
+\definecolor{tablemat}{rgb}{0.18,0.32,0.32}
+\definecolor{citation}{rgb}{0,0,0.45}
+\definecolor{darkWhite}{rgb}{0.98,0.98,0.98}
+\definecolor{darkGreen}{rgb}{0,0.5,0}
+
+% Lst for COMM and input file examples
+\usepackage{listings}                       
+
+% Custom boxe fFor warning, info, etc. 
+\usepackage{Setup/Messages_pkg/alertmessage}    % ** WARNING ** Don't switch with xcolor --> conflict otherwise !
+
+% Alertmessage pkg command memo
+% \alertinfo{Test.}
+% \alertsuccess{Test.}
+% \alertwarning{Test.}
+% \alerterror{Test.}
+
+% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%                         Document layout settings                           %
+% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+% General headers and page bottom settings 
+\usepackage{fancyhdr}                       
+\pagestyle{fancy}
+\fancyhead[LE]{\thepage}
+\fancyhead[RE]{\textbf{\leftmark}}
+\fancyhead[RO]{\thepage}
+\fancyhead[LO]{\textbf{\rightmark}}
+\fancyfoot[L,C,R]{}
+
+% Chapter header settings 
+\usepackage[Bjornstrup]{fncychap}  
+\ChNumVar{\Large{\textbf{\color{white}{CHAPTER}}} \fontsize{76}{80}\usefont{OT1}{pzc}{m}{n}\selectfont}
+\ChTitleVar{\raggedright\LARGE\bfseries} 
+\addto\captionsfrench{\def\tablename{Table}} 
+
+% Table of contents settings
+\usepackage{tocloft}     
+
+\renewcommand{\cftchapfont}{\scshape}
+\renewcommand{\cftsecfont}{\bfseries}
+\renewcommand{\cftfigfont}{Figure }
+\renewcommand{\cfttabfont}{Table }
+\setcounter{secnumdepth}{3}
+\setcounter{tocdepth}{4}
+
+% Minitoc settings 
+\usepackage[french]{minitoc}
+\mtcsettitle{minitoc}{Content}
+\mtcsetrules{*}{on}
+\mtcsetoffset{minitoc}{0pt}
+\mtcsetdepth{minitoc}{4}
+\mtcsetpagenumbers{minitoc}{on}
+\mtcsetformat{minitoc}{tocrightmargin}{1mm}
+\mtcsetformat{minitoc}{dotinterval}{0.11mm}
+\makeatletter
+\renewcommand{\@pnumwidth}{4mm}
+\makeatother
+\providecommand{\tabularnewline}{\\}
+\setlength{\mtcindent}{0cm} % No indent in miniTOC
+
+\renewcommand{\cftfigfont}{\raggedright} % Align figure titles to the left
+\renewcommand{\cftfignumwidth}{3em}      % Adjust space for figure number
+\renewcommand{\cfttabfont}{\raggedright} 
+\renewcommand{\cfttabnumwidth}{3em}
+
+% More chapter header settings
+% Just changing color here to match the TOC colors. 
+
+% Chapter title color
+\newcommand{\colortitlechap}{\color[rgb]{1,1,1}} 
+
+% Chapter number color
+\newcommand{\colornumberchap}{\color[rgb]{0.7,0.8,0.2}} 
+
+% Background box (= tablemat color) 
+\newcommand{\colorbackchap}{\colorbox[rgb]{0.18,0.32,0.32}} 
+
+% Chapter headers
+\makeatletter
+\renewcommand{\DOCH}{%
+    \settowidth{\py}{\CNoV\thechapter}
+    \addtolength{\py}{-10pt}% 
+    \fboxsep=0pt%
+    \colorbackchap{\rule{0pt}{40pt}\parbox[b]{\textwidth}{\hfill}}%
+    \kern-\py\raise20pt%
+    \hbox{\colornumberchap\CNoV\thechapter}\\%
+}
+
+\renewcommand{\DOTI}[1]{%
+    \nointerlineskip\raggedright%
+    \fboxsep=\myhi%
+    \vskip-1ex%
+    \colorbackchap{\parbox[t]{\mylen}{\CTV\FmTi{\colortitlechap#1}}}\par\nobreak%
+    \vskip 40\p@%
+}
+
+\renewcommand{\DOTIS}[1]{%
+    \fboxsep=0pt%
+    \colorbackchap{\rule{0pt}{40pt}\parbox[b]{\textwidth}{\hfill}}\\%
+    \nointerlineskip\raggedright%
+    \fboxsep=\myhi%
+    \colorbackchap{\parbox[t]{\mylen}{\CTV\FmTi{\colortitlechap#1}}}\par\nobreak%
+    \vskip 40\p@%
+}
+
+\makeatother
+
+% Settings for COMM/code/command excerpts
+\lstset{aboveskip=6mm,belowskip=0mm,backgroundcolor=\color{darkWhite}, basicstyle=\ttfamily\footnotesize,breakatwhitespace=false,
+ breaklines=true,captionpos=b,commentstyle=\color{blue},deletekeywords={...},escapeinside={\%*}{*)},extendedchars=true, framexleftmargin=0pt,
+  framextopmargin=2pt,framexbottommargin=2pt,frame=tb, keepspaces=true, keywordstyle=\color{blue}, language=C,morekeywords={*,...},
+  numbers=left,numbersep=3pt,numberstyle=\tiny\color{black},rulecolor=\color{black},showspaces=false,showstringspaces=false,showtabs=false,stepnumber=1, 
+  stringstyle=\color{gray}, tabsize=3, title=\lstname, morecomment=[l][\color{blue}]{!}}
+
+% Listings caption settings
+\renewcommand{\lstlistingname}{Example} 
+\renewcommand{\lstlistlistingname}{List of file, code and command examples}
+
+% insert python code in latex
+\usepackage{minted}
+
+\setminted{
+  fontsize=\normal,
+  breaklines=true,
+  linenos=false,
+  frame=lines,
+  framesep=2mm
+}

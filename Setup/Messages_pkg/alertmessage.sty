@@ -1,0 +1,58 @@
+\NeedsTeXFormat{LaTeX2e}[2003/12/01]
+\ProvidesPackage{alertmessage}
+   [2015/08/04 v1.1 Alert messages]
+ % Required packages
+ \RequirePackage{picture}%
+ \RequirePackage{xcolor}%
+ \RequirePackage{ifthen}%
+ \RequirePackage{calc}%
+ \RequirePackage{graphicx}%
+ \RequirePackage{tikz}%
+
+ % Options
+ \DeclareOption*{}%
+ \ProcessOptions%
+
+ % ALERT PANEL
+ \newlength{\alertmessage@textlength}%
+ \newcommand*\alertmessage@panel[3]{%
+  \begin{center} %
+  \noindent % No indentation
+  \begin{tikzpicture} %
+  \node[draw=#1!80, fill=#1!20, rounded corners=5pt, inner sep=11pt]{ % Add a little bit of transparency
+  $\begin{array}{l} % One-cell table
+  \includegraphics[scale=0.5]{{#2}} % Alert icon
+  \end{array}$ %
+  \settowidth{\alertmessage@textlength}{{#3}} %
+  \ifthenelse{\lengthtest{\alertmessage@textlength > 400pt}}{ % If text is more than 400pt
+  \parbox{430pt}{{#3}} % Box which handles paragraphs
+  }{ % Else
+  \makebox{}{{#3}} % Box which adapts itself to the text length
+  } %
+  }; %
+  \end{tikzpicture} %
+  \end{center} %
+  \par % Get back the indentation
+ }%
+
+ % ERROR ALERT
+ \newcommand*\alerterror[1]{%
+  \alertmessage@panel{red}{img/alertmessage-error.png}{#1}%
+ }%
+
+ % ERROR WARNING
+ \newcommand*\alertwarning[1]{%
+  \alertmessage@panel{orange}{img/alertmessage-warning.png}{#1}%
+ }%
+
+ % ERROR SUCCESS
+ \newcommand*\alertsuccess[1]{%
+  \alertmessage@panel{green}{img/alertmessage-success.png}{#1}%
+ }%
+
+ % ERROR INFO
+ \newcommand*\alertinfo[1]{%
+  \alertmessage@panel{blue}{img/alertmessage-info.png}{#1}%
+ }%
+
+\endinput

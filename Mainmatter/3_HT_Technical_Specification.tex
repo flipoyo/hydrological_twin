@@ -1,0 +1,219 @@
+\chapter{Hydrological Twin - Technical specifications} \label{chap-tech-surf}
+
+\phantomsection
+\fancyhead[LE]{\thepage} 
+\fancyhead[RE]{\textbf{Hydrological Twin - Technical Specification}}
+\fancyhead[RO]{\thepage} 
+\fancyhead[LO]{\textbf{Hydrological Twin - Technical Specification}}
+\renewcommand{\headrulewidth}{1pt}
+
+\setlength{\parindent}{0cm} % no indent
+\setlength{\parskip}{9pt}
+
+% --------------------------------------------------------------
+\section{Goal}
+
+The \texttt{HydrologicalTwin} (HT) is a monolithic backend façade for CaWaQS-ViZ.  
+It is designed as the \emph{only} backend entry point used by the QGIS plugin.
+
+HT reuses the existing CaWaQS-ViZ code base without rewriting it, including:
+\begin{itemize}
+    \item \texttt{Compartment}, \texttt{Mesh}, \texttt{Observations}, \texttt{Extraction}
+    \item \texttt{Manage.Temporal}, \texttt{Manage.Budget}, \texttt{Manage.Spatial}
+\end{itemize}
+
+It exposes a clean and stable API for:
+\begin{itemize}
+    \item value extraction from CaWaQS binary outputs,
+    \item temporal aggregation,
+    \item mass balance and budget analysis,
+    \item spatial operators (catchment cells, aquifer outcropping).
+\end{itemize}
+
+It also supports persistence via \texttt{.pkl} files for bancarisation.
+
+This architecture deliberately does not rewrite the existing code base; instead, it wraps it and formalizes a clear interface for all front-end clients.
+
+\section{Integration with Existing CaWaQS-ViZ Code}
+
+\subsection{Package Layout}
+
+The new \texttt{ht} subpackage is introduced inside the existing \texttt{cawaqsviz} package:
+
+\begin{verbatim}
+cawaqsviz/
+    Compartment.py
+    Mesh.py
+    Observations.py
+    Extraction.py
+    Manage.py
+    interface/
+        Config.py
+    ht/
+        __init__.py
+        hydrological_twin.py
+        api_types.py
+        persistence.py
+\end{verbatim}
+
+The existing modules (\texttt{Compartment}, \texttt{Mesh}, \texttt{Observations}, \texttt{Extraction}, \texttt{Manage}) remain unchanged.
+
+\subsection{HydrologicalTwin Construction}
+
+The \texttt{HydrologicalTwin} is built from the same configuration objects already used by \texttt{Compartment}:
+\begin{itemize}
+    \item \texttt{ConfigGeometry}
+    \item \texttt{ConfigProject} (e.g. regime)
+    \item \texttt{out\_caw\_directory} (root of CaWaQS outputs)
+    \item \texttt{obs\_directory} (root of observation data)
+    \item \texttt{temp\_directory} (optional, defaults to CaWaQS outputs directory)
+\end{itemize}
+
+The constructor stores these references and instantiates the service layers:
+\begin{itemize}
+    \item \texttt{Manage.Temporal()}
+    \item \texttt{Manage.Budget()}
+    \item \texttt{Manage.Spatial()}
+\end{itemize}
+
+\section{Domain Model and Encapsulation}
+
+\subsection{Compartments}
+
+HT maintains an internal mapping:
+\[
+\texttt{self.compartments: Dict[int, Compartment]}
+\]
+
+\begin{itemize}
+    \item \texttt{build\_compartment(id\_compartment)} calls the existing \texttt{Compartment} constructor.
+    \item \texttt{get\_compartment(id\_compartment)} returns an existing instance or builds it on demand.
+\end{itemize}
+
+The GUI must never construct \texttt{Compartment} objects directly.  
+All access goes through \texttt{HydrologicalTwin.get\_compartment()} or higher-level HT methods.
+
+\subsection{Observations, Mesh, Extraction}
+
+These classes remain internal implementation details of \texttt{Compartment}.  
+They are not exposed to the GUI. All access goes through explicit methods on \texttt{HydrologicalTwin}.
+
+\section{HydrologicalTwin Backend API}
+
+The HT API consists of the public methods of the \texttt{HydrologicalTwin} class.  
+Each method is a thin wrapper around existing domain logic.
+
+\subsection{\texttt{extract\_values(...)}}
+
+\textbf{Purpose:}  
+Read CaWaQS binary outputs, build a time-series DataFrame, and optionally write a CSV.
+
+\textbf{Implementation:}
+\begin{itemize}
+    \item Retrieve or build the compartment:
+    \begin{verbatim}
+comp = self.get_compartment(id_compartment)
+    \end{verbatim}
+
+    \item Call:
+    \begin{verbatim}
+temporal.readSimData(...)
+    \end{verbatim}
+
+    \item Convert to DataFrame:
+    \begin{verbatim}
+temporal.simMatrixToDf(...)
+    \end{verbatim}
+
+    \item Optionally write a tab-separated CSV.
+\end{itemize}
+
+The method returns an \texttt{ExtractValuesResponse} containing:
+\begin{itemize}
+    \item the DataFrame,
+    \item the CSV path (if written),
+    \item metadata.
+\end{itemize}
+
+\subsection{\texttt{apply\_temporal\_operator(...)}}
+
+\textbf{Purpose:}  
+Apply temporal aggregation (annual mean, monthly sum, quantiles, etc.).
+
+It wraps:
+\begin{verbatim}
+Manage.Temporal.aggregate_matrix(...)
+\end{verbatim}
+
+The GUI provides the DataFrame to aggregate, typically produced by \texttt{extract\_values()}.
+
+\subsection{\texttt{compute\_mass\_balance(...)}}
+
+\textbf{Purpose:}  
+Compute interannual budgets and mass balances.
+
+Wraps:
+\begin{verbatim}
+Manage.Budget.calcInteranualBVariable(...)
+\end{verbatim}
+
+Returns a \texttt{MassBalanceResponse}.
+
+\subsection{\texttt{apply\_spatial\_operator(...)}}
+
+Provides a unified spatial API.
+
+\begin{itemize}
+    \item \texttt{operator = 'catchment\_cells'}  
+    Wraps \texttt{Manage.Spatial.getCatchmentCellsIds(...)}  
+    Returns a DataFrame with \texttt{id\_cell}.
+
+    \item \texttt{operator = 'aquifer\_outcropping'}  
+    Wraps \texttt{Manage.Spatial.buildAqOutcropping(...)}  
+    Returns a DataFrame with \texttt{id\_abs}.
+\end{itemize}
+
+\section{Persistence and Bancarisation}
+
+HT inherits from \texttt{HTPersistenceMixin}, which provides:
+\begin{itemize}
+    \item \texttt{HydrologicalTwin.to\_pickle(path)}
+    \item \texttt{HydrologicalTwin.from\_pickle(path)}
+\end{itemize}
+
+This enables:
+\begin{itemize}
+    \item caching of fully built hydrological twins,
+    \item fast reloads in new QGIS sessions,
+    \item the creation of a future \emph{HydroTwin Hub} of \texttt{.pkl} snapshots.
+\end{itemize}
+
+Each snapshot stores:
+\begin{itemize}
+    \item a schema version,
+    \item the class name,
+    \item the serialized HT instance.
+\end{itemize}
+
+\section{Interface–Backend Contract}
+
+The QGIS plugin must interact only with:
+\begin{itemize}
+    \item \texttt{HydrologicalTwin}
+\end{itemize}
+
+and never directly with:
+\begin{itemize}
+    \item \texttt{Compartment}
+    \item \texttt{Mesh}
+    \item \texttt{Observations}
+    \item \texttt{Manage.*}
+\end{itemize}
+
+This guarantees:
+\begin{itemize}
+    \item a clear API contract,
+    \item easier refactoring,
+    \item easier automated testing,
+    \item reuse by other tools (CLI, notebooks, web services).
+\end{itemize}

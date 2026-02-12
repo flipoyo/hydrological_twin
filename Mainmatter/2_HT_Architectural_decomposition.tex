@@ -1,0 +1,285 @@
+\chapter{Architectural Decomposition of \hydrot}
+\label{chap-tech-surf}
+
+\phantomsection
+\fancyhead[LE]{\thepage}
+\fancyhead[RE]{\textbf{Hydrological Twin - Architectural Decomposition}}
+\fancyhead[RO]{\thepage}
+\fancyhead[LO]{\textbf{Hydrological Twin - Architectural Decomposition}}
+\renewcommand{\headrulewidth}{1pt}
+
+\setlength{\parindent}{0cm}
+\setlength{\parskip}{9pt}
+
+% ---------------------------------------------------------------------
+
+\section{Global Architecture Overview}
+\label{ch:architecture}
+
+The HydrologicalTwin architecture is structured as a hierarchy of git-synchronized scientific objects. Identity is no longer managed by an \texttt{IdCard}; it is defined through deterministic Git provenance and environment fingerprinting. Every object that participates in the twin space-state must expose a \texttt{GitSynchroRecord}. This transformation removes symbolic identity in favor of computational ontology.
+
+\subsection{Architectural Principles}
+
+The architecture is governed by five principles:
+
+\begin{enumerate}
+\item \textbf{Deterministic provenance.} All objects are reproducible through Git commit hashes and dependency locks.
+\item \textbf{Layer symmetry.} Estimation, analysis and cartographic layers exist both at twin and compartment levels.
+\item \textbf{Strict separation of concerns.} Model, Data and Numerical storage are distinct but synchronized.
+\item \textbf{Append-only registry.} Validation events are immutable and hash-chained.
+\item \textbf{Priority of reproducibility over convenience.}
+\end{enumerate}
+
+\subsection{Layered Architecture and Design Rationale}
+
+The architecture decomposes into:
+
+\begin{itemize}
+\item \textbf{HydroTwin}
+\item \textbf{Compartment}
+\item \textbf{Simulation}
+\item \textbf{Model Layer}
+\item \textbf{Data Layer}
+\item \textbf{NumPy Hypercube}
+\item \textbf{Estimation Layer}
+\item \textbf{Analysis Layer}
+\item \textbf{Cartographic Layer}
+\item \textbf{Universal Git Registry}
+\end{itemize}
+
+Each level introduces stricter reproducibility constraints.
+
+\subsection{Inter-Layer Interactions and Data Flow}
+
+The data flow is structured as:
+
+\[
+\text{Data} \rightarrow \text{Model} \rightarrow \text{Hypercube} \rightarrow \text{Estimation} \rightarrow \text{Analysis} \rightarrow \text{Cartography}
+\]
+
+Each transformation produces a new git-synchronized state.
+
+% ---------------------------------------------------------------------
+
+\section{Core Object Hierarchy}
+
+\subsection{HydroTwin}
+
+\texttt{HydroTwin} is the top-level orchestrator.
+
+It contains:
+
+\begin{itemize}
+\item \texttt{git\_synchro} of self
+\item list of \texttt{Compartment}
+\item twin-wide Estimation Layer
+\item twin-wide Analysis Layer
+\item twin-wide Cartographic Layer
+\end{itemize}
+
+\subsection{Compartment}
+
+A \texttt{Compartment} represents a structured subspace of the hydrological system.
+
+It contains:
+
+\begin{itemize}
+\item one \texttt{Simulation}
+\item Estimation Layer
+\item Analysis Layer
+\item Cartographic Layer
+\end{itemize}
+
+\subsection{Simulation}
+
+A \texttt{Simulation} binds:
+
+\begin{itemize}
+\item Model Layer (spatial support, temporal support, software git-synchro)
+\item Data Layer (data manifest + parameter manifest)
+\item NumPy Hypercube (with numpy version tracked)
+\end{itemize}
+
+% ---------------------------------------------------------------------
+
+\section{Model Layer}
+\label{ch:model-layer}
+
+The Model Layer defines:
+
+\begin{itemize}
+\item Spatial support (CRS, resolution, mesh, topology)
+\item Temporal support (time step, calendar, horizon)
+\item Software provenance (Git commit, Python version, dependency lock)
+\end{itemize}
+
+The model is invalid if its git-synchro record cannot be resolved.
+
+% ---------------------------------------------------------------------
+
+\section{Data Layer}
+\label{ch:data-layer}
+
+The Data Layer includes:
+
+\begin{itemize}
+\item Forcings (public by default)
+\item Model parameters (private by default)
+\item Observational products
+\item DataManifest
+\end{itemize}
+
+All data are content-addressed and hashed. Parameters are treated as data objects and therefore versioned equivalently.
+
+% ---------------------------------------------------------------------
+
+\section{Estimation Layer}
+\label{ch:estimation-layer}
+
+The Estimation Layer operates as a synchronization operator on the space-state.
+
+It includes:
+
+\begin{itemize}
+\item Calibration
+\item Bayesian inference
+\item Data assimilation
+\item Prior and likelihood definitions
+\end{itemize}
+
+Any estimation update produces a new git-synchronized twin state.
+
+Priority rule: estimation can never modify data in place. It produces new states only.
+
+% ---------------------------------------------------------------------
+
+\section{Analysis Layer}
+\label{ch:analysis-layer}
+
+The Analysis Layer defines generic operators applicable across compartments.
+
+Outputs must conform to a defined standard accepted by the twin.
+
+\subsection{Transformation Operator}
+
+Time transformations:
+
+\begin{itemize}
+\item Arithmetic mean over time
+\item Monthly aggregation
+\item Yearly aggregation
+\end{itemize}
+
+Spatial transformations:
+
+\begin{itemize}
+\item Spatial weighted arithmetic mean
+\item Spatial harmonic mean (rates)
+\item Spatial geometric mean (multiplicative processes)
+\end{itemize}
+
+\subsection{Extraction Operator}
+
+The Extraction Operator produces NumPy hypercube subsets based on:
+
+\begin{itemize}
+\item spatial filters
+\item temporal filters
+\item variable selection
+\end{itemize}
+
+Extraction outputs are git-synchronized artifacts.
+
+% ---------------------------------------------------------------------
+
+\section{Cartographic Layer}
+\label{ch:carto-layer}
+
+The Cartographic Layer guarantees reproducible spatial rendering:
+
+\begin{itemize}
+\item CRS enforcement
+\item Symbolization standards
+\item Raster/vector export rules
+\item QGIS compatibility
+\end{itemize}
+
+Map outputs must include provenance metadata and hash.
+
+% ---------------------------------------------------------------------
+
+\section{Git-Synchronized Registry}
+\label{ch:registry}
+
+\subsection{Universal Registry}
+
+All validated \hydrot\ instances are appended to a hash-chained JSONL registry.
+
+Each entry contains:
+
+\begin{itemize}
+\item UTC timestamp
+\item git-synchro fingerprint
+\item actor and host metadata
+\item previous entry hash
+\item entry hash
+\end{itemize}
+
+Tampering invalidates the chain.
+
+\subsection{Priority of Actions in Registry Workflow}
+
+Registry operations follow strict priority:
+
+\begin{enumerate}
+\item Validate twin consistency (all git-synchro records resolvable).
+\item Freeze working tree (no dirty state allowed).
+\item Append registry entry.
+\item Commit registry file.
+\item Push to remote.
+\end{enumerate}
+
+Failure at any stage aborts the process.
+
+\subsection{Operational Rule}
+
+A HydrologicalTwin instance becomes ontologically valid only after:
+
+\[
+\texttt{append\_validated} \rightarrow \texttt{git\_commit} \rightarrow \texttt{git\_push}
+\]
+
+Before that sequence, it is computational but not certified.
+
+% ---------------------------------------------------------------------
+
+\section{Action Prioritization Across the Architecture}
+
+Execution priority across the entire system follows:
+
+\begin{enumerate}
+\item Git-synchro validation
+\item Data manifest validation
+\item Hypercube integrity check
+\item Estimation execution
+\item Analysis operators
+\item Cartographic rendering
+\item Registry append
+\end{enumerate}
+
+No analysis or cartographic output is authorized if provenance checks fail.
+
+% ---------------------------------------------------------------------
+
+\section{Architectural Consequence}
+
+The architectural decomposition enforces:
+
+\begin{itemize}
+\item strict separation between model, data and estimation
+\item deterministic reproducibility
+\item explicit state transitions
+\item cryptographic traceability
+\end{itemize}
+
+HydrologicalTwin therefore operates not as a loose workflow, but as a formally structured git-synchronized space-state system in which every object, transformation and validation event is reproducible and audit-ready.

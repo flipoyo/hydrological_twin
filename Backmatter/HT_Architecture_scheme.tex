@@ -1,0 +1,101 @@
+\documentclass[border=10pt]{standalone}
+\usepackage{tikz}
+\usetikzlibrary{shapes,arrows,positioning,fit,backgrounds}
+
+
+\begin{tikzpicture}[
+    node distance=0.3cm,
+    layer/.style={rectangle, draw, thick, fill=blue!20, minimum width=10cm, minimum height=1.2cm, align=center, font=\bfseries},
+    sublayer/.style={rectangle, draw, fill=blue!10, minimum width=4.5cm, minimum height=0.8cm, align=left, font=\small},
+    metadata/.style={rectangle, draw, fill=yellow!30, minimum width=4cm, align=left, font=\footnotesize},
+    arrow/.style={->, thick},
+]
+
+% Data Layers at bottom
+\node[sublayer] (dataA) {DATA LAYER A};
+\node[sublayer, right=0.5cm of dataA] (dataB) {DATA LAYER B etc....};
+
+% Forcings, Reanalysis, Obs below data layers
+\node[below=0.3cm of dataA.south, anchor=north, font=\small] (forcings) {FORCINGS};
+\node[right=0.3cm of forcings] (reanalysis) {REANALYSIS};
+\node[right=0.3cm of reanalysis] (obs) {OBS};
+
+% Estimation Layer
+\node[layer, above=1cm of dataA.north west, anchor=south west] (estimation) {
+    ESTIMATION LAYER:\\
+    \normalfont\small -comparison\\
+    -filtering\\
+    -bayesian interference
+};
+
+% Cartographic Layer
+\node[layer, above=of estimation] (cartographic) {CARTOGRAPHIC LAYER};
+
+% Analysis Layer
+\node[layer, above=of cartographic] (analysis) {
+    ANALYSIS LAYER\\
+    \normalfont\small - Operator (Time and space)\\
+    -Extractor (Mask - Time and space)
+};
+
+% Model Layers
+\node[sublayer, above=0.8cm of analysis.north west, anchor=south west] (modelA) {MODEL LAYER A};
+\node[sublayer, right=0.5cm of modelA] (modelB) {MODEL LAYER B etc....};
+
+% Title at top
+\node[above=0.5cm of modelA.north west, anchor=south west, font=\Large\bfseries] (title) {MONOLITHIC HYDROTWIN};
+
+% Right side: State Variable box
+\node[metadata, right=1.5cm of estimation.east, anchor=west, minimum height=3cm] (statevar) {
+    \textbf{EACH STATE VARIABLE is an}\\
+    \textbf{ontological object}\\[0.2cm]
+    ex. 3D matrix\\
+    [ncells][nparams][timestep]\\[0.2cm]
+    + METADATA
+};
+
+% Metadata details box
+\node[metadata, below=0.3cm of statevar.south west, anchor=north west, minimum height=3.5cm] (metadata) {
+    \textbf{METADATA:}\\
+    - provenance (model or\\
+    \hspace{0.3cm}filtering et..)\\
+    - spatial scale\\
+    - functional role\\
+    - domain of validity\\
+    \hspace{0.3cm}(time and space)\\
+    - underlying physical or\\
+    \hspace{0.3cm}modelling assumption
+};
+
+% Git registry box
+\node[metadata, below=0.3cm of metadata.south west, anchor=north west] (git) {
+    \textbf{GIT synchronized registry}\\
+    - Identity\\
+    - Versioning\\
+    - Provenance
+};
+
+% Arrows from data to estimation
+\draw[arrow] (dataA.north) -- (estimation.south -| dataA.north);
+\draw[arrow] (dataB.north) -- (estimation.south -| dataB.north);
+
+% Arrows from forcings/reanalysis/obs to data layers
+\draw[arrow] (forcings.north) -- (dataA.south -| forcings.north);
+\draw[arrow] (reanalysis.north) -- (dataA.south -| reanalysis.north);
+\draw[arrow] (obs.north) -- (dataB.south -| obs.north);
+
+% Arrow from estimation to cartographic
+\draw[arrow] (estimation.north) -- (cartographic.south);
+
+% Arrow from cartographic to analysis
+\draw[arrow] (cartographic.north) -- (analysis.south);
+
+% Arrows from model layers to analysis
+\draw[arrow] (modelA.south) -- (analysis.north -| modelA.south);
+\draw[arrow] (modelB.south) -- (analysis.north -| modelB.south);
+
+% Arrows connecting to state variable box
+\draw[arrow] (analysis.east) -- (statevar.west |- analysis.east);
+\draw[arrow] (cartographic.east) -- (statevar.west |- cartographic.east);
+
+\end{tikzpicture}

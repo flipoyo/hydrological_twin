@@ -1,0 +1,72 @@
+\section{Workflow from QGIS to CaWaQS Output}
+
+This diagram describes the typical execution flow when a user triggers a computation in the CaWaQS-ViZ QGIS plugin.  
+It highlights how the shared \texttt{HydrologicalTwin} instance, created once in \texttt{ExploreData}, propagates through all dialogs and backend services.
+
+\begin{center}
+\begin{tikzpicture}[
+  node distance=1.5cm,
+  box/.style={rectangle, draw, rounded corners, text width=4.5cm, align=center, minimum height=1cm},
+  arrow/.style={->, thick, >=stealth}
+]
+
+% Nodes
+\node[box] (qgis) {QGIS Plugin / GUI};
+\node[box, below of=qgis] (explore) {ExploreData (initialization)};
+\node[box, below of=explore] (ht) {HydrologicalTwin (HT) Singleton};
+\node[box, left of=ht, xshift=-8cm] (dialogs) {Dialog Scripts (Plot, Stats, Compare, etc.)};
+\node[box, below of=ht] (services) {Manage Services: Temporal, Budget, Spatial};
+\node[box, below of=services, yshift=-1cm] (ca) {CaWaQS Simulation Outputs};
+\node[box, left of=ca, xshift=-6cm] (obs) {Observation Files};
+
+% Arrows
+\draw[arrow] (qgis) -- (explore) node[midway, right] {start session};
+\draw[arrow] (explore) -- (ht) node[midway, right] {instantiate HT};
+\draw[arrow] (ht) -- (dialogs) node[midway, above] {shared reference};
+\draw[arrow] (dialogs) -- (services) node[midway, left] {call HT API};
+\draw[arrow] (services) -- (ca) node[midway, right] {read sim data};
+\draw[arrow] (services) -- (obs) node[midway, left] {read obs data};
+\draw[arrow] (ca) -- (dialogs) node[midway, below, sloped] {data for UI plots};
+\draw[arrow] (obs) -- (dialogs) node[midway, below, sloped] {obs for stats/plots};
+
+\end{tikzpicture}
+\end{center}
+
+\subsection{Description of Workflow Steps}
+
+\begin{enumerate}
+    \item \textbf{QGIS Plugin / UI}  
+    The user interacts with the QGIS interface and triggers an action (e.g., plot simulation, compare sim/obs, calculate statistics).
+
+    \item \textbf{ExploreData Initialization}  
+    Upon project load or at first use, \texttt{ExploreData.get\_instance()} is called.  
+    \texttt{ExploreData} constructs a new \texttt{HydrologicalTwin} (HT) using configuration from the project.
+
+    \item \textbf{HydrologicalTwin Singleton}  
+    The HT instance encapsulates backend services and domain objects. It is stored inside \texttt{ExploreData} and reused by all dialogs.  
+
+    \item \textbf{Dialog Scripts}  
+    When the user activates a dialog (e.g., “Compare Sim/Obs”), the dialog retrieves the shared HT instance:
+    \begin{verbatim}
+    self.hydro_twin = self.exd.hydro_twin
+    \end{verbatim}
+    The dialog then calls only HT API methods (e.g., \texttt{extract\_values}, \texttt{apply\_temporal\_operator}, etc.).
+
+    \item \textbf{Manage.* Services}  
+    HT uses internal services (\texttt{Manage.Temporal}, \texttt{Manage.Budget}, \texttt{Manage.Spatial}) to:
+    \begin{itemize}
+        \item read simulation matrix and convert to DataFrame,
+        \item perform temporal aggregation (e.g., annual mean),
+        \item compute budgets,
+        \item execute spatial operators (e.g., catchment cells).
+    \end{itemize}
+
+    \item \textbf{CaWaQS Simulation Output Files}  
+    Backend services read CaWaQS binary simulation outputs and convert them to usable time series or spatial tables.
+
+    \item \textbf{Observation Files}  
+    Services also read observed time series files, align them with simulation output periods, and return them for comparison or statistics.
+
+    \item \textbf{Back to Dialog}  
+    The dialog receives the processed data from HT and updates the UI: plots, tables, PDF/HTML exports, and statistical results.
+\end{enumerate}
