@@ -9,6 +9,6 @@ Hydrodrological Twinis a digital twin of hydrological systems implemented as a P
 
 Each Hydrodrological Twininstance is linked to a complex ecosystem of Git repositories encompassing databases, models, and configuration artefacts, each of them being carefully registered and versioned in terms of space--state.
 
-At its core, Hydrodrological Twinrelies on a small number of conceptual classes that formalize identity, versioning, spatial supports, observations, simulations, and model configurations. In particular, identity and traceability are enforced through a Git-aware \texttt{IdCard} that captures repository provenance (commit, branch, tag/describe, dirty state, and remote URL) and uses it to compute a reproducible version fingerprint.
+At its core, Hydrodrological Twinrelies on a small number of conceptual classes that formalize identity, versioning, spatial supports, observations, simulations, and model configurations. In particular, identity and traceability are enforced through a \texttt{GitSynchroRecord} that captures repository provenance (commit, branch, tag/describe, dirty state, and remote URL) and uses it to compute a reproducible version fingerprint through deterministic Git provenance and environment fingerprinting.
 
 This Repo is the documentation of Hydrological Twin

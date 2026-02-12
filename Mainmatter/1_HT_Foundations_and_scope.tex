@@ -35,7 +35,7 @@ Each \hydrot\ instance is linked to a complex ecosystem of Git repositories enco
 
 
 
-At its core, \hydrot\ relies on a small number of conceptual classes that formalize identity, versioning, spatial supports, observations, simulations, and model configurations. In particular, identity and traceability are enforced through a Git-aware \texttt{IdCard} that captures repository provenance (commit, branch, tag/describe, dirty state, and remote URL) and uses it to compute a reproducible version fingerprint.
+At its core, \hydrot\ relies on a small number of conceptual classes that formalize identity, versioning, spatial supports, observations, simulations, and model configurations. In particular, identity and traceability are enforced through a \texttt{GitSynchroRecord} that captures repository provenance (commit, branch, tag/describe, dirty state, and remote URL) and uses it to compute a reproducible version fingerprint through deterministic Git provenance and environment fingerprinting.
 
 
 \subsection{Architecture}
@@ -135,9 +135,11 @@ This design enables:
 
 \hydrot\ is conceived by construction as an open--source, service--oriented infrastructure. Its codebase, datasets, and configuration artefacts are intended to be hosted in publicly accessible Git repositories whenever legally and ethically possible.
 
-Traceability is not an optional feature but a structural invariant: every \hydrot\ object carries a Git-aware identity card embedding commit hashes, branch or tag identifiers, dirty state, and remote URLs. The universal registry further anchors each validated digital twin instance in an append-only, hash-chained ledger synchronized on Git.
+Traceability is not an optional feature but a structural invariant: every \hydrot\ object carries a \texttt{GitSynchroRecord} embedding commit hashes, branch or tag identifiers, dirty state, and remote URLs. The universal registry further anchors each validated digital twin instance in an append-only, hash-chained ledger synchronized on Git.
 
 This architecture turns Git into a scientific instrumentation layer, providing cryptographic integrity, distributed synchronization, and long-term archival capabilities at negligible marginal cost.
+
+Every object that participates in the twin space-state must expose a \texttt{GitSynchroRecord}, removing symbolic identity in favor of computational ontology.
 
 \subsection{The Only Private Component: Physical Model Parameterizations}
 
@@ -149,6 +151,6 @@ Model parameters often encode strategic, economic, or intellectual capital, espe
 \item private artefacts: internal parameter sets of physically--based models.
 \end{itemize}
 
-This separation is enforced at the repository level through Git access policies. The parameter repositories can remain private, while their identity cards and cryptographic fingerprints are still registered in the space--state and in the universal registry.
+This separation is enforced at the repository level through Git access policies. The parameter repositories can remain private, while their \texttt{GitSynchroRecord} instances and cryptographic fingerprints are still registered in the space--state and in the universal registry.
 
 As a result, it becomes possible to prove the existence, version, and lineage of a given parameterization without revealing its numerical content. This ensures both scientific traceability and legitimate protection of sensitive assets.
