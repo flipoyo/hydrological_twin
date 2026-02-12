@@ -16,11 +16,11 @@
 \section{\hydrot\ in brief}
 
 
-\hydrot\ establishes a new epistemic regime for hydrological modelling. It replaces loosely coupled numerical experiments by synchronized, stateful, traceable and reproductible anchored estimations. It is multi--dataset and multi--model by construction, natively compatible with Bayesian and AI methodologies, and structurally committed to audit given a native open--source design.
+\hydrot\ establishes a new epistemic regime for hydrological modelling. It replaces loosely coupled numerical experiments by synchronized, stateful, traceable and reproducible anchored estimations. It is multi--dataset and multi--model by construction, natively compatible with Bayesian and AI methodologies, and structurally committed to audit given a native open--source design.
 
 By isolating physical model parameterizations as the only potentially private component, \hydrot\ reconciles scientific openness with operational and economic constraints. In doing so, it provides a rigorous and future-proof foundation for digital hydrology, at the intersection of physics, data science, and distributed versioned infrastructures.
 
-\hydrot\ is a digital twin of hydrological systems implemented as a Python package following a monolithic architectural approach. It is conceived as a persistent artefact evolving in the ontological space--state continuum.
+\hydrot\ is a digital twin of hydrological systems implemented as a Python package following a monolithic architectural approach. It is conceived as a persistent artefact evolving in the ontological space-state continuum.
 
 
 
@@ -29,7 +29,7 @@ By isolating physical model parameterizations as the only potentially private co
 
 
 
-Each \hydrot\ instance is linked to a complex ecosystem of Git repositories encompassing databases, models, and configuration artefacts, each of them being carefully registered and versioned in terms of space--state.
+Each \hydrot\ instance is linked to a complex ecosystem of Git repositories encompassing databases, models, and configuration artefacts, each of them being carefully registered and versioned in terms of space-state.
 
 
 
@@ -53,15 +53,15 @@ One instance of a \hydrot\ is composed of six functional layers :
 
 \section{Foundational Principles}
 
-\hydrot\ is conceived as a foundational digital infrastructure for hydrological science and engineering. Its primary objective is not merely to host numerical models, but to formalize hydrological knowledge as a persistent, traceable, and evolutive artefact in the space--state continuum.
+\hydrot\ is conceived as a foundational digital infrastructure for hydrological science and engineering. Its primary objective is not merely to host numerical models, but to formalize hydrological knowledge as a persistent, traceable, and evolutive artefact in the space-state continuum.
 
-The core transformation introduced by \hydrot\ is the passage from classical physically--based modelling toward \emph{synchronized physically--based estimation}. In conventional practice, physically--based models are executed as isolated numerical experiments, producing results that are weakly linked to their exact computational, parametric, and data provenance. In contrast, \hydrot\ enforces that every simulation, dataset, parameterization, and software component is explicitly registered, versioned, and fingerprinted within a coherent space--state framework.
+The core transformation introduced by \hydrot\ is the passage from classical physically--based modelling toward \emph{synchronized physically--based estimation}. In conventional practice, physically--based models are executed as isolated numerical experiments, producing results that are weakly linked to their exact computational, parametric, and data provenance. In contrast, \hydrot\ enforces that every simulation, dataset, parameterization, and software component is explicitly registered, versioned, and fingerprinted within a coherent space-state framework.
 
 This shift elevates hydrological modelling from a sequence of ad hoc numerical runs to a formally structured process of stateful estimation, where each computational act becomes a reproducible, auditable, and referencable object.
 
 \subsection{From Physically--Based Models to Physically--Based Estimation}
 
-The defining transformative property of \hydrot\ lies in its ability to synchronize physically--based models with the evolving space--state of the digital twin.
+The defining transformative property of \hydrot\ lies in its ability to synchronize physically--based models with the evolving space-state of the digital twin.
 
 In this paradigm, a hydrological model is no longer treated as a static algorithmic object, but as a dynamic estimation engine whose outputs are strictly bound to:
 \begin{itemize}
@@ -72,7 +72,7 @@ In this paradigm, a hydrological model is no longer treated as a static algorith
 \item and a fully captured Git provenance snapshot.
 \end{itemize}
 
-Each execution therefore constitutes a physically--based estimation step embedded in a synchronized space--state. Any modification of code, data, parameters, or repository state deterministically generates a new version fingerprint, making silent drift or hidden inconsistencies structurally impossible.
+Each execution therefore constitutes a physically--based estimation step embedded in a synchronized space-state. Any modification of code, data, parameters, or repository state deterministically generates a new version fingerprint, making silent drift or hidden inconsistencies structurally impossible.
 
 This design transforms model outputs into first-class scientific objects: they are no longer merely numbers, but estimators whose identity and lineage are cryptographically anchored to their full computational context.
 
@@ -117,11 +117,11 @@ Finally, version control plays a foundational role in the governance of the onto
 
 \subsection{Multi simulation by design : Space--State as a Substrate for Bayesian and AI Methods}
 
-The explicit multi simulation space--state formalism composed of multiple simulations implemented in \hydrot\ provides a natural substrate for Bayesian inference and for the deployment of artificial intelligence methods.
+The explicit multi simulation space-state formalism composed of multiple simulations implemented in \hydrot\ provides a natural substrate for Bayesian inference and for the deployment of artificial intelligence methods.
 
-Because each simulation and dataset is uniquely identified and versioned, posterior distributions, likelihood evaluations, surrogate models, and learned emulators can be attached to precise space--state coordinates. This allows Bayesian updating schemes in which priors, posteriors, and evidence are not abstract mathematical objects, but concrete, traceable artefacts stored within the digital twin.
+Because each simulation and dataset is uniquely identified and versioned, posterior distributions, likelihood evaluations, surrogate models, and learned emulators can be attached to precise space-state coordinates. This allows Bayesian updating schemes in which priors, posteriors, and evidence are not abstract mathematical objects, but concrete, traceable artefacts stored within the digital twin.
 
-In this context, AI models are no longer black boxes trained on loosely documented datasets. They become estimators whose training data, architecture, hyperparameters, and resulting weights are themselves registered as space--state objects with full Git provenance.
+In this context, AI models are no longer black boxes trained on loosely documented datasets. They become estimators whose training data, architecture, hyperparameters, and resulting weights are themselves registered as space-state objects with full Git provenance.
 
 This design enables:
 \begin{itemize}
@@ -151,6 +151,6 @@ Model parameters often encode strategic, economic, or intellectual capital, espe
 \item private artefacts: internal parameter sets of physically--based models.
 \end{itemize}
 
-This separation is enforced at the repository level through Git access policies. The parameter repositories can remain private, while their \texttt{GitSynchroRecord} instances and cryptographic fingerprints are still registered in the space--state and in the universal registry.
+This separation is enforced at the repository level through Git access policies. The parameter repositories can remain private, while their \texttt{GitSynchroRecord} instances and cryptographic fingerprints are still registered in the space-state and in the universal registry.
 
 As a result, it becomes possible to prove the existence, version, and lineage of a given parameterization without revealing its numerical content. This ensures both scientific traceability and legitimate protection of sensitive assets.
