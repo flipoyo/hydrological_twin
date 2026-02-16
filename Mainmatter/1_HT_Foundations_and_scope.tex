@@ -159,12 +159,12 @@ Traceability is enforced for all actions: public operations are openly logged, w
 
 
 % --- NOUVELLE VERSION DE 1.3.6 ---
-\subsection{The Only Private Components: Instanciation, Physical Model Parameterizations and Extraction from Simulation Hyper-Cube}
+\subsection{The Only Private Components: Instantiation, Physical Model Parameterizations and Extraction from Simulation Hyper-Cube}
 \label{sec:private-components}
 
-By design, HydrologicalTwin isolates \textbf{two categories of private components}:
+By design, HydrologicalTwin isolates \textbf{three categories of private components}:
 \begin{enumerate}
-    \item \textbf{Instanciation} TODO 
+    \item \textbf{Instantiation}: Creating a new \hydrot\ instance requires private-key authentication to ensure proper provenance tracking and accountability. Instantiation establishes the git-synchronized state of the digital twin and appends it to the universal registry with cryptographic traceability.
     \item \textbf{Physical model parameterizations}: These may encode strategic or proprietary knowledge and are stored in restricted-access repositories. Their existence and version are traceable via \texttt{GitSynchroRecord}, but their numerical content remains confidential.
     \item \textbf{Data extraction and analysis operations}: Raw simulation data (e.g., full-resolution NumPy hypercubes) and advanced analytical operations (e.g., \texttt{extract\_values}, \texttt{apply\_temporal\_operator}) require \textbf{private-key authentication}. Without a valid key, users are limited to:
     \begin{itemize}
