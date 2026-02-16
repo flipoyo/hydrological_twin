@@ -30,43 +30,112 @@ It highlights how the shared \texttt{HydrologicalTwin} instance, created once in
 \draw[arrow] (obs) -- (dialogs) node[midway, below, sloped] {obs for stats/plots};
 
 \end{tikzpicture}
-\end{center}
+%\caption{
+%        Workflow from QGIS to CaWaQS output.
+%        \textbf{Public users} (gray path) are limited to the \textit{Rendering} layer.
+%        \textbf{Private-key users} (blue path) access full functionality, with actions %logged for traceability.
+%    }
 
+\end{center}
+% --- NOUVELLE VERSION DE 3.3.1 ---
 \subsection{Description of Workflow Steps}
+\label{sec:workflow-steps}
+
+The workflow from QGIS to CaWaQS output is structured to enforce \textbf{access control} and \textbf{reproducibility} at every stage. Figure~\ref{fig:workflow-keys} illustrates the process, with distinct paths for public and private-key users.
 
 \begin{enumerate}
-    \item \textbf{QGIS Plugin / UI}  
-    The user interacts with the QGIS interface and triggers an action (e.g., plot simulation, compare sim/obs, calculate statistics).
 
-    \item \textbf{ExploreData Initialization}  
-    Upon project load or at first use, \texttt{ExploreData.get\_instance()} is called.  
-    \texttt{ExploreData} constructs a new \texttt{HydrologicalTwin} (HT) using configuration from the project.
-
-    \item \textbf{HydrologicalTwin Singleton}  
-    The HT instance encapsulates backend services and domain objects. It is stored inside \texttt{ExploreData} and reused by all dialogs.  
-
-    \item \textbf{Dialog Scripts}  
-    When the user activates a dialog (e.g., “Compare Sim/Obs”), the dialog retrieves the shared HT instance:
-    \begin{verbatim}
-    self.hydro_twin = self.exd.hydro_twin
-    \end{verbatim}
-    The dialog then calls only HT API methods (e.g., \texttt{extract\_values}, \texttt{apply\_temporal\_operator}, etc.).
-
-    \item \textbf{Manage.* Services}  
-    HT uses internal services (\texttt{Manage.Temporal}, \texttt{Manage.Budget}, \texttt{Manage.Spatial}) to:
+    \item \textbf{QGIS Plugin / UI}
+    The user interacts with the QGIS interface and triggers an action (e.g., plot simulation, compare sim/obs, calculate statistics). The plugin initializes the session and checks the user's access level:
     \begin{itemize}
-        \item read simulation matrix and convert to DataFrame,
-        \item perform temporal aggregation (e.g., annual mean),
-        \item compute budgets,
-        \item execute spatial operators (e.g., catchment cells).
+        \item \textbf{Public users} (no private-key) are restricted to visualization and masked data.
+        \item \textbf{Private-key users} unlock full functionality, including data extraction and simulation execution.
     \end{itemize}
 
-    \item \textbf{CaWaQS Simulation Output Files}  
-    Backend services read CaWaQS binary simulation outputs and convert them to usable time series or spatial tables.
+    \item \textbf{ExploreData Initialization}
+    Upon project load, \texttt{ExploreData.get\_instance()} is called, constructing a \texttt{HydrologicalTwin} instance with the project configuration. The twin's mode (\texttt{public} or \texttt{private}) is set based on the presence of a valid private-key:
+    \begin{verbatim}
+        twin = HydrologicalTwin(mode="private", key="user_key.pem")  # Private access
+        twin = HydrologicalTwin(mode="public")                       # Public access
+    \end{verbatim}
 
-    \item \textbf{Observation Files}  
-    Services also read observed time series files, align them with simulation output periods, and return them for comparison or statistics.
+    \item \textbf{HydrologicalTwin Singleton}
+    The \texttt{HydrologicalTwin} instance encapsulates all backend services and domain objects. It acts as a gatekeeper:
+    \begin{itemize}
+        \item Validates private-keys for restricted operations.
+        \item Logs all actions with user-specific metadata.
+        \item Enforces consistency across dialogs and simulations.
+    \end{itemize}
+    The instance is stored in \texttt{ExploreData} and reused by all dialogs.
 
-    \item \textbf{Back to Dialog}  
-    The dialog receives the processed data from HT and updates the UI: plots, tables, PDF/HTML exports, and statistical results.
+    \item \textbf{Dialog Scripts}
+    When a user activates a dialog (e.g., "Compare Sim/Obs"), the dialog retrieves the shared \texttt{HydrologicalTwin} instance and checks permissions:
+    \begin{verbatim}
+        self.hydro_twin = self.exd.hydro_twin
+        if dialog.requires_private_access and not self.hydro_twin.has_key():
+            raise PermissionError("Private-key required for this operation.")
+    \end{verbatim}
+    Dialogs call only \texttt{HydrologicalTwin} API methods (e.g., \texttt{extract\_values}, \texttt{apply\_temporal\_operator}).
+
+    \item \textbf{Private-Key Validation}
+    For restricted operations (e.g., data extraction, parameter modification), the twin verifies the user's private-key:
+    \begin{itemize}
+        \item If valid, the operation proceeds, and results are cryptographically logged.
+        \item If invalid, the twin raises an error:
+        \begin{verbatim}
+        Error: Private-key required for this operation.
+        \end{verbatim}
+    \end{itemize}
+
+    \item \textbf{Manage.* Services}
+    The twin delegates tasks to internal services (\texttt{Manage.Temporal}, \texttt{Manage.Budget}, \texttt{Manage.Spatial}) with access control:
+    \begin{itemize}
+        \item \textbf{Public operations} (e.g., rendering maps):
+        \begin{verbatim}
+            data = twin.apply_spatial_mask(request)  # Masked/aggregated data
+        \end{verbatim}
+        \item \textbf{Private operations} (e.g., raw data extraction):
+        \begin{verbatim}
+            data = twin.extract_values(request)      # Requires private-key
+        \end{verbatim}
+    \end{itemize}
+    Services perform:
+    \begin{itemize}
+        \item Temporal/spatial aggregation (e.g., annual mean, catchment-level averages).
+        \item Budget calculations and statistical analyses.
+        \item GIS-based spatial operations (e.g., catchment cell extraction).
+    \end{itemize}
+
+    \item \textbf{CaWaQS Simulation Output Files}
+    Backend services read CaWaQS binary outputs (\texttt{*.bin}) and convert them to NumPy hypercubes. Private-key users access full-resolution data; public users receive masked subsets.
+
+    \item \textbf{Observation Files}
+    Observed time series (\texttt{*.dat}) are aligned with simulation periods. Access is restricted based on user permissions:
+    \begin{itemize}
+        \item Public: Pre-computed statistics or aggregated time series.
+        \item Private: Raw observational data.
+    \end{itemize}
+
+    \item \textbf{Metadata Verification}
+    Before returning results, the twin verifies:
+    \begin{itemize}
+        \item Consistency of \texttt{GitSynchroRecord} hashes for code, data, and parameters.
+        \item Cryptographic signatures for private actions.
+    \end{itemize}
+    Inconsistencies trigger:
+    \begin{verbatim}
+    Error: Metadata mismatch. Data or code may have been altered.
+    \end{verbatim}
+
+    \item \textbf{Back to Dialog}
+    The dialog receives processed data and updates the UI:
+    \begin{itemize}
+        \item Plots, tables, or PDF/HTML exports for public users.
+        \item Raw data, advanced statistics, or simulation controls for private-key users.
+    \end{itemize}
+    All private actions are logged with the user's key fingerprint.
+
 \end{enumerate}
+
+
+% --- FIN DE LA SECTION ---

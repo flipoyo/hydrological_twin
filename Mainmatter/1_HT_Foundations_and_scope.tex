@@ -113,6 +113,16 @@ Estimation procedures and data assimilation are naturally embedded within this o
 
 Finally, version control plays a foundational role in the governance of the ontological state-space. Git-based versioning is not limited to tracking source code evolution; each committed Hydrological Twin corresponds to a uniquely identifiable point or trajectory in the ontological state-space. This enables full traceability of simulations, including their structural definitions, transformations, and parameterizations, and allows systematic comparison between alternative twins. This property fundamentally distinguishes the Hydrological Twin from standard digital twin implementations, which typically lack formal state-space semantics and long-term traceability.
 
+% --- AJOUT DANS 1.3.3 (Ontological State-Space) ---
+Within the ontological state-space, \textbf{private-key authenticated users} can:
+\begin{itemize}
+    \item Access raw state variables and full-resolution data.
+    \item Modify parameterizations and execute new simulations.
+\end{itemize}
+Public users interact with a \textbf{restricted state-space subset}, limited to aggregated and/or masked variables.
+
+% --- FIN DE L'AJOUT ---
+
 
 
 \subsection{Multi simulation by design : Space--State as a Substrate for Bayesian and AI Methods}
@@ -141,16 +151,45 @@ This architecture turns Git into a scientific instrumentation layer, providing c
 
 Every object that participates in the twin space-state must expose a \texttt{GitSynchroRecord}, removing symbolic identity in favor of computational ontology.
 
-\subsection{The Only Private Component: Physical Model Parameterizations}
+% --- AJOUT DANS 1.3.5 (Open-Source, Traceable, and Service-Oriented) ---
+Traceability is enforced for all actions: public operations are openly logged, while \textbf{private-key authenticated actions} (e.g., data extraction, parameter changes) are tied to user identities and cryptographically recorded. This dual-layer approach ensures both transparency and confidentiality where required.
 
-By design, the only component of a \hydrot\ instance that may remain private is the parameterization of physically--based models.
+% --- FIN DE L'AJOUT ---
 
-Model parameters often encode strategic, economic, or intellectual capital, especially in operational or industrial contexts. For this reason, \hydrot\ explicitly distinguishes between:
+
+
+% --- NOUVELLE VERSION DE 1.3.6 ---
+\subsection{The Only Private Components: Physical Model Parameterizations and Access to Simulation Hyper-Cube}
+\label{sec:private-components}
+
+By design, HydrologicalTwin isolates \textbf{two categories of private components}:
+\begin{enumerate}
+    \item \textbf{Physical model parameterizations}: These may encode strategic or proprietary knowledge and are stored in restricted-access repositories. Their existence and version are traceable via \texttt{GitSynchroRecord}, but their numerical content remains confidential.
+    \item \textbf{Data extraction and analysis operations}: Raw simulation data (e.g., full-resolution NumPy hypercubes) and advanced analytical operations (e.g., \texttt{extract\_values}, \texttt{apply\_temporal\_operator}) require \textbf{private-key authentication}. Without a valid key, users are limited to:
+    \begin{itemize}
+        \item Masked or aggregated outputs (e.g., basin-level averages).
+        \item Visualization layers (e.g., spatial maps, time-series plots) via the \textit{Rendering} layer.
+    \end{itemize}
+\end{enumerate}
+
+\subsubsection*{Access Control Mechanism}
 \begin{itemize}
-\item public artefacts: code, datasets, forcings, spatial supports, observational products, and simulation outputs,
-\item private artefacts: internal parameter sets of physically--based models.
+    \item Public users interact with the twin through a \textbf{restricted API}, accessing only pre-computed or masked data.
+    \item Private-key holders unlock full functionality, including:
+    \begin{itemize}
+        \item Raw data extraction.
+        \item Parameter modification.
+        \item Execution of new simulations.
+    \end{itemize}
+    \item All private actions are \textbf{cryptographically logged} to ensure traceability and prevent tampering.
 \end{itemize}
 
-This separation is enforced at the repository level through Git access policies. The parameter repositories can remain private, while their \texttt{GitSynchroRecord} instances and cryptographic fingerprints are still registered in the space-state and in the universal registry.
+\subsubsection*{Rationale}
+This separation reconciles scientific openness with operational constraints:
+\begin{itemize}
+    \item \textbf{Transparency}: Public users can verify the existence and provenance of simulations via \texttt{GitSynchroRecord}.
+    \item \textbf{Confidentiality}: Sensitive parameters and raw data remain protected.
+    \item \textbf{Reproducibility}: Private actions are tied to user identities via key-based authentication, ensuring accountability.
+\end{itemize}
 
-As a result, it becomes possible to prove the existence, version, and lineage of a given parameterization without revealing its numerical content. This ensures both scientific traceability and legitimate protection of sensitive assets.
+% --- FIN DE LA SECTION ---

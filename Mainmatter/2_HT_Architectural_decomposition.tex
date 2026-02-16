@@ -59,6 +59,22 @@ The data flow is structured as:
 
 Each transformation produces a new git-synchronized state.
 
+% --- MODIFICATION DE 2.1.3 ---
+\subsubsection{Metadata Verification and Private-Key Authentication}
+Before instantiation, HydrologicalTwin performs a multi-stage validation:
+\begin{enumerate}
+    \item \textbf{Metadata consistency check}: Verifies \texttt{GitSynchroRecord} hashes for code, data, and parameters.
+    \item \textbf{Private-key authentication}: Required for operations beyond the \textit{Rendering} layer (e.g., \texttt{extract\_values}, simulation execution).
+    \item \textbf{Immutability enforcement}: If metadata or key validation fails, the twin refuses to initialize and logs:
+    \begin{verbatim}
+    Error: Access denied. Invalid metadata or private-key.
+    \end{verbatim}
+\end{enumerate}
+
+% --- FIN DE LA MODIFICATION ---
+
+
+
 % ---------------------------------------------------------------------
 
 \section{Core Object Hierarchy}
@@ -72,10 +88,25 @@ It contains:
 \begin{itemize}
 \item \texttt{git\_synchro} of self
 \item list of \texttt{Compartment}
-\item twin-wide Estimation Layer
+\item twin-wide Estimation LayerOperatio
 \item twin-wide Analysis Layer
 \item twin-wide Cartographic Layer
 \end{itemize}
+
+% --- AJOUT DANS LA DESCRIPTION DE HydroTwin ---
+HydroTwin enforces \textbf{role-based access control} via private-keys:
+\begin{itemize}
+    \item Acts as a gatekeeper for sensitive operations (e.g., data extraction, parameter modification).
+    \item Logs all private actions with user-specific keys to ensure non-repudiation.
+    \item Provides a \texttt{verify\_key()} method to validate user permissions dynamically.
+\end{itemize}
+
+
+
+% --- FIN DE L'AJOUT ---
+
+
+
 
 \subsection{Compartment}
 
@@ -242,13 +273,21 @@ Failure at any stage aborts the process.
 
 \subsection{Operational Rule}
 
-A Hydrological Twin instance becomes ontologically valid only after:
+% --- MODIFICATION DE 2.8.3 ---
+A HydrologicalTwin instance becomes ontologically valid only after:
+\begin{enumerate}
+    \item Metadata verification (\texttt{verify\_metadata()}).
+    \item \textbf{Private-key validation} (for restricted operations).
+    \item Registry append (\texttt{append\_validated}).
+    \item Git commit/push (\texttt{git\_commit}, \texttt{git\_push}).
+\end{enumerate}
+Public instances operate in a \textbf{read-only mode}, limited to the \textit{Rendering} layer.
 
-\[
-\texttt{append\_validated} \rightarrow \texttt{git\_commit} \rightarrow \texttt{git\_push}
-\]
+Instantiating a Twin requires private-key clearance, as well as initiating a subTwin by extraction.
 
-Before that sequence, it is computational but not certified.
+% --- FIN DE LA MODIFICATION ---
+
+
 
 % ---------------------------------------------------------------------
 

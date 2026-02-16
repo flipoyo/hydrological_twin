@@ -267,109 +267,15 @@ The following five primitives form a minimal yet expressive API foundation:
   \end{itemize}
 \end{itemize}
 
+\subsection{Config problem in SteadyState : QGIS closes completely}. 
+    \item When configuring a project in steady-state mode, CaWaQS does not produce a HYD corresp file.txt. During initialization, when the plugin builds the HYD compartment mesh, it tries to read this file and calls sys.exit() if it's missing. In a QGIS plugin, sys.exit() doesn't just stop the plugin — it raises SystemExit which propagates through QGIS's C++ event loop and kills the entire application.The correspondence file maps GIS cell IDs to CaWaQS internal absolute IDs (ID ABS). It's only needed to index into HYD binary output files (HYD Q.*.bin, etc.). In steady state, since these outputs don't exist, the mapping is unnecessary — the mesh can be built using GIS IDs directly (same logic as all other compartments).
 
-\section{Current Functional Scope of HydroTwin on CaWaQS Viz}
-
-This section summarizes the functionalities already implemented in CaWaqS viz, that ar e being kept during the work to make this as an hydrotwin.
-It reflects the present development state and serves as a reference for ongoing architectural and API design decisions.
-
-\subsection{Simulation vs Observation Analysis}
-
-\begin{itemize}
-  \item Comparison for \textbf{aquifer (AQ)} or \textbf{hydrological (HYD)} variables
-  \item Distinction between:
+\subsection{Cleaning the backend after the connection with HT: Avoid repetition, combine shared function}.
   \begin{itemize}
-    \item Period used for plotting
-    \item Period used for statistical computation
+    \item The Steady state reading functions (Manage)
+    \item The whole architecture couls be cleearer: Like Observation, extraction mesh and compartment could all be in the same folder defining the space 
+    \item Is all the code of the readSim needede ( for al the case there is not the right year)
   \end{itemize}
-  \item Supported statistics:
-  \begin{itemize}
-    \item Minimum, maximum, mean, quantiles
-  \end{itemize}
-  \item Probability density function (PDF) plotting
-  \item Interactive graphical outputs
-\end{itemize}
-
-\subsection{Spatial Maps}
-
-\begin{itemize}
-  \item Aggregation period selection
-  \item Temporal frequency:
-  \begin{itemize}
-    \item Annual, monthly, daily
-    \item Multi-annual aggregation for annual and monthly frequencies
-  \end{itemize}
-  \item Aggregation operators:
-  \begin{itemize}
-    \item Cumulative, average, quantile, minimum, maximum
-  \end{itemize}
-  \item Supported variables:
-  \begin{itemize}
-    \item Rainfall
-    \item Effective rainfall
-    \item Actual evapotranspiration (ETR)
-    \item Infiltration (INF)
-    \item Runoff
-    \item Overland flow (OZ)
-    \item River--aquifer exchanges
-    \item Groundwater recharge
-    \item Surface overflow
-  \end{itemize}
-\end{itemize}
-
-\subsection{Water Budget Analysis}
-
-\begin{itemize}
-  \item User-defined plotted period
-  \item Temporal frequency:
-  \begin{itemize}
-    \item Annual, monthly, daily
-    \item Multi-annual aggregation for annual and monthly frequencies
-  \end{itemize}
-  \item Aggregation operators:
-  \begin{itemize}
-    \item Cumulative, average, minimum, maximum
-  \end{itemize}
-\end{itemize}
-
-\subsection{Hydrological Regime Analysis}
-
-\begin{itemize}
-  \item User-defined plotted period
-  \item Variables:
-  \begin{itemize}
-    \item Discharge
-    \item Piezometric head
-  \end{itemize}
-  \item Statistical plots:
-  \begin{itemize}
-    \item Static outputs (PNG, PDF)
-    \item Interactive plots
-  \end{itemize}
-\end{itemize}
-
-\subsection{Statistical Performance Criteria}
-
-\begin{itemize}
-  \item Analysis for:
-  \begin{itemize}
-    \item Piezometric (PZ)
-    \item Hydrological (HYD) variables
-  \end{itemize}
-  \item User-defined plotting period
-  \item Aggregation operators:
-  \begin{itemize}
-    \item Mean, minimum, maximum, quantiles
-  \end{itemize}
-  \item Implemented criteria:
-  \begin{itemize}
-    \item Percent bias (PBIAS)
-    \item Average simulated / observed ratio
-    \item Kling--Gupta Efficiency (KGE)
-    \item Root Mean Square Error (RMSE)
-    \item Nash--Sutcliffe Efficiency (NSE)
-  \end{itemize}
-\end{itemize}
 
 \section{Development Timeline}
 
@@ -418,6 +324,13 @@ It reflects the present development state and serves as a reference for ongoing 
     \item Redefined the structure as API sending to (Vec operator for computations, Manage for I/O, Rendering for the plotting)
     \item TO DO: 
 \end{itemize}
+
+\subsection{16 Feb: HT Retoring and restructuring
+\begin{itemize}
+    \item Config problem in SteadyState : QGIS closes completely. 
+    \item 
+\end{itemize}
+
 
 \section{Main Potential Issues}
 
