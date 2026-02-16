@@ -1,0 +1,43 @@
+\chapter{Use Cases}
+\label{chap-use-case}
+
+\phantomsection
+\fancyhead[LE]{\thepage}
+\fancyhead[RE]{\textbf{Hydrological Twin - Architectural Decomposition}}
+\fancyhead[RO]{\thepage}
+\fancyhead[LO]{\textbf{Hydrological Twin - Architectural Decomposition}}
+\renewcommand{\headrulewidth}{1pt}
+
+\setlength{\parindent}{0cm}
+\setlength{\parskip}{9pt}
+
+% ---------------------------------------------------------------------
+
+\section{Scientific Integrity of Simulation}
+
+Instanciating a HydroTwin requires to check its integrity. It requires private-key level
+
+
+HydroTwin performs the certification of its integrity, meaning it can reproduce the simulation (multi-model outputs) based on the provided information. 
+
+
+\section{Simulation rendering and basic statistics - CaWaQS-ViZ}
+
+public
+
+Reexpliquer ce qui est dit précédemment mais en s'inspirant de la notice cawaqs-viz
+
+\section{Generate a submodel}
+
+Extraction of a subTwin -> metadata, subModels that run, Simulation OUTPUTS. private-key level - nested functionality. HydroTwin must contain a pointeur towards its subTwin. Do be done via the global registry, or the subTwin is contained in its mother class. I prefer option2
+
+Cas d'usage typique un territoire en son bassin, un champ captant en son territoire
+
+\section{Analysis}
+
+private-key 
+
+parameter self-fitting
+uncertainty analysis
+
+based on bayesian inversion, deep learning, generating
