@@ -3,9 +3,9 @@
 
 \phantomsection
 \fancyhead[LE]{\thepage}
-\fancyhead[RE]{\textbf{Hydrological Twin - Architectural Decomposition}}
+\fancyhead[RE]{\textbf{Hydrological Twin - Use Cases}}
 \fancyhead[RO]{\thepage}
-\fancyhead[LO]{\textbf{Hydrological Twin - Architectural Decomposition}}
+\fancyhead[LO]{\textbf{Hydrological Twin - Use Cases}}
 \renewcommand{\headrulewidth}{1pt}
 
 \setlength{\parindent}{0cm}
@@ -13,31 +13,338 @@
 
 % ---------------------------------------------------------------------
 
-\section{Scientific Integrity of Simulation}
+This chapter presents the principal use cases of \hydrot, organized according to the access control levels defined in the architectural framework. Each use case illustrates how the digital twin infrastructure supports reproducible, traceable, and auditable hydrological workflows.
 
-Instanciating a HydroTwin requires to check its integrity. It requires private-key level
+% ---------------------------------------------------------------------
 
+\section{Use Case 1: Instantiation and Scientific Integrity Verification}
 
-HydroTwin performs the certification of its integrity, meaning it can reproduce the simulation (multi-model outputs) based on the provided information. 
+\subsection{Context and Objective}
 
+Instantiating a \hydrot\ instance is the foundational operation that establishes a reproducible, git-synchronized representation of a hydrological system. This use case requires private-key authentication and performs comprehensive integrity verification to ensure that all components---model software, data, parameters, and spatial supports---are properly versioned and internally consistent.
 
-\section{Simulation rendering and basic statistics - CaWaQS-ViZ}
+\subsection{Access Level}
 
-public
+\textbf{Private-key authentication required.}
 
-Reexpliquer ce qui est dit précédemment mais en s'inspirant de la notice cawaqs-viz
+Only authenticated users with valid private keys can instantiate a \hydrot\ instance. This ensures that the creation of digital twins is controlled, traceable, and linked to specific actors.
 
-\section{Generate a submodel}
+\subsection{Operational Workflow}
 
-Extraction of a subTwin -> metadata, subModels that run, Simulation OUTPUTS. private-key level - nested functionality. HydroTwin must contain a pointeur towards its subTwin. Do be done via the global registry, or the subTwin is contained in its mother class. I prefer option2
+The instantiation process follows a strict validation sequence:
 
-Cas d'usage typique un territoire en son bassin, un champ captant en son territoire
+\begin{enumerate}
+\item \textbf{Metadata consistency check}: The system verifies that all \texttt{GitSynchroRecord} objects are resolvable. This includes:
+\begin{itemize}
+    \item Model software commit hashes
+    \item Data repository states
+    \item Parameter repository states
+    \item Configuration file versions
+\end{itemize}
 
-\section{Analysis}
+\item \textbf{Private-key authentication}: The system validates the user's private key and logs the authentication event with:
+\begin{itemize}
+    \item UTC timestamp
+    \item User identity
+    \item Host metadata
+    \item Cryptographic signature
+\end{itemize}
 
-private-key 
+\item \textbf{Git provenance verification}: Each component must have a clean working tree (no dirty state) or explicitly declared modifications. The system computes deterministic version fingerprints for all components.
 
-parameter self-fitting
-uncertainty analysis
+\item \textbf{Registry append}: If all checks pass, the validated twin instance is appended to the universal Git registry with a hash-chained entry linking it to previous states.
+\end{enumerate}
 
-based on bayesian inversion, deep learning, generating
+\subsection{Scientific Integrity Certification}
+
+Upon successful instantiation, \hydrot\ certifies that:
+
+\begin{itemize}
+\item All simulations can be reproduced from the provided metadata.
+\item No silent modifications or drift have occurred.
+\item The complete computational context is captured and fingerprinted.
+\item The twin instance has a unique, immutable identity in the space-state continuum.
+\end{itemize}
+
+If any verification step fails, the instantiation is aborted and the system logs:
+
+\begin{verbatim}
+Error: Access denied. Invalid metadata or private-key.
+Reason: [specific verification failure]
+\end{verbatim}
+
+\subsection{Output and Traceability}
+
+A successfully instantiated \hydrot\ produces:
+
+\begin{itemize}
+\item A validated digital twin object with complete \texttt{GitSynchroRecord} provenance
+\item An immutable registry entry in the universal ledger
+\item A cryptographic fingerprint uniquely identifying this space-state configuration
+\item Audit logs linking the instantiation to the authenticated user
+\end{itemize}
+
+% ---------------------------------------------------------------------
+
+\section{Use Case 2: Public Visualization and Basic Statistics}
+
+\subsection{Context and Objective}
+
+This use case addresses the needs of public users who require access to simulation results for visualization, basic statistical analysis, and spatial exploration without exposing raw data or proprietary parameters. It corresponds to the public rendering capabilities provided through the CaWaQS-ViZ interface.
+
+\subsection{Access Level}
+
+\textbf{Public access (no authentication required).}
+
+Any user can access pre-computed, aggregated, or masked outputs through the rendering layer. This ensures transparency while protecting sensitive information.
+
+\subsection{Available Operations}
+
+Public users can perform the following operations through the Cartographic Layer:
+
+\begin{itemize}
+\item \textbf{Spatial visualization}: Display maps of simulated variables (water table elevation, discharge, recharge) with standard symbolization and CRS enforcement.
+
+\item \textbf{Temporal visualization}: Plot time series of basin-averaged or station-specific variables.
+
+\item \textbf{Basic statistics}: Access pre-computed statistics including:
+\begin{itemize}
+    \item Mean, median, standard deviation
+    \item Temporal aggregates (monthly, seasonal, annual)
+    \item Spatial aggregates (basin-wide, aquifer-scale)
+\end{itemize}
+
+\item \textbf{Metadata inspection}: View provenance information including:
+\begin{itemize}
+    \item Model software version (commit hash, branch, tag)
+    \item Data sources (without exposing raw values)
+    \item Parameter existence (without revealing numerical values)
+    \item Simulation execution timestamp
+\end{itemize}
+\end{itemize}
+
+\subsection{Restricted Access to Raw Data}
+
+Public users \textbf{cannot}:
+
+\begin{itemize}
+\item Extract raw NumPy hypercube arrays
+\item Access full-resolution spatial grids
+\item View or modify model parameters
+\item Execute new simulations
+\item Apply arbitrary temporal or spatial operators beyond pre-defined aggregations
+\end{itemize}
+
+\subsection{Implementation through CaWaQS-ViZ}
+
+The public visualization interface provides:
+
+\begin{itemize}
+\item QGIS-compatible vector and raster layers
+\item Interactive map navigation with controlled zoom levels
+\item Export capabilities for maps and plots (PNG, PDF formats)
+\item CSV export of aggregated statistics only
+\end{itemize}
+
+All rendering operations are reproducible: each visualization includes provenance metadata linking it to the specific \hydrot\ fingerprint and rendering parameters.
+
+\subsection{Transparency without Exposure}
+
+This use case demonstrates how \hydrot\ reconciles scientific openness with operational constraints. Public users can:
+
+\begin{itemize}
+\item Verify that simulations exist and are properly versioned
+\item Explore results at meaningful aggregation scales
+\item Reproduce visualizations from documented rendering scripts
+\end{itemize}
+
+However, they cannot access proprietary parameters or raw data, ensuring confidentiality where required.
+
+% ---------------------------------------------------------------------
+
+\section{Use Case 3: SubTwin Extraction and Nested Instantiation}
+
+\subsection{Context and Objective}
+
+A common operational requirement is to extract a spatially or temporally refined digital twin from a parent \hydrot\ instance. This creates a nested hierarchy of twins, each inheriting provenance from its parent while potentially introducing localized refinements.
+
+Typical applications include:
+
+\begin{itemize}
+\item Extracting a catchment-scale twin from a regional-scale parent
+\item Creating a wellfield-focused twin from a territory-scale parent
+\item Generating a time-window-specific twin for detailed analysis of a flood event
+\end{itemize}
+
+\subsection{Access Level}
+
+\textbf{Private-key authentication required.}
+
+SubTwin extraction involves accessing raw simulation outputs and potentially modifying spatial or temporal supports, which are restricted operations.
+
+\subsection{Operational Workflow}
+
+The extraction process follows these steps:
+
+\begin{enumerate}
+\item \textbf{Parent twin validation}: Verify that the parent \hydrot\ instance is properly instantiated and registered.
+
+\item \textbf{Extraction specification}: Define the spatial extent, temporal window, and variable subset for the SubTwin:
+\begin{itemize}
+    \item Spatial filter: bounding box, catchment polygon, or mesh subset
+    \item Temporal filter: date range, specific event windows
+    \item Variable selection: subset of state variables to retain
+\end{itemize}
+
+\item \textbf{Data extraction}: Apply extraction operators from the Analysis Layer to create SubTwin hypercubes.
+
+\item \textbf{Metadata inheritance}: The SubTwin inherits \texttt{GitSynchroRecord} provenance from the parent, with additional metadata recording:
+\begin{itemize}
+    \item Parent twin fingerprint
+    \item Extraction operators applied
+    \item Spatial and temporal bounds
+    \item Authenticated user performing the extraction
+\end{itemize}
+
+\item \textbf{SubTwin instantiation}: The extracted SubTwin is instantiated as a new, independently versioned \hydrot\ object.
+
+\item \textbf{Registry linkage}: The SubTwin is registered with explicit linkage to its parent in the universal registry.
+\end{enumerate}
+
+\subsection{Nested Functionality and Hierarchy}
+
+SubTwins maintain a pointer to their parent twin, creating a hierarchical structure. This can be implemented in two ways:
+
+\begin{itemize}
+\item \textbf{Option 1 (via global registry)}: SubTwins reference their parent through registry fingerprints, enabling distributed and independent versioning.
+
+\item \textbf{Option 2 (nested containment)}: SubTwins are contained as child objects within their parent class, ensuring tighter coupling and automatic propagation of parent updates.
+\end{itemize}
+
+The preferred implementation is \textbf{Option 2 (nested containment)}, which simplifies parent-child synchronization and ensures that SubTwins remain consistent with their parent's evolution.
+
+\subsection{Concrete Example: Wellfield Extraction}
+
+Consider a regional groundwater model covering 10,000 km² with a spatial resolution of 1 km. An operational user needs to analyze a specific wellfield covering 50 km² with higher temporal resolution.
+
+The workflow proceeds as follows:
+
+\begin{enumerate}
+\item Authenticate with private key and load the regional parent twin.
+\item Define a spatial polygon around the wellfield area.
+\item Extract relevant variables (hydraulic head, pumping rates, recharge).
+\item Instantiate the wellfield SubTwin with inherited provenance.
+\item Register the SubTwin with explicit linkage to the parent.
+\item Perform wellfield-specific analyses using the Analysis Layer.
+\end{enumerate}
+
+The resulting SubTwin is fully traceable: its provenance explicitly documents that it is a spatial subset of a specific parent twin, extracted by a specific user at a specific time.
+
+% ---------------------------------------------------------------------
+
+\section{Use Case 4: Advanced Analysis and Uncertainty Quantification}
+
+\subsection{Context and Objective}
+
+This use case addresses advanced analytical workflows that require full access to raw simulation outputs and the ability to execute new model runs. It supports:
+
+\begin{itemize}
+\item Parameter calibration and self-fitting
+\item Uncertainty propagation and sensitivity analysis
+\item Bayesian inference and posterior sampling
+\item Hybrid physics-AI model development
+\end{itemize}
+
+\subsection{Access Level}
+
+\textbf{Private-key authentication required.}
+
+These operations involve modifying parameters, executing new simulations, and accessing raw hypercube data.
+
+\subsection{Parameter Calibration Workflow}
+
+The parameter calibration use case follows this sequence:
+
+\begin{enumerate}
+\item \textbf{Load parent twin}: Authenticate and instantiate a baseline \hydrot\ with initial parameter estimates.
+
+\item \textbf{Define calibration objectives}: Specify target observations, likelihood functions, and prior distributions.
+
+\item \textbf{Execute calibration algorithm}: Use the Estimation Layer to run:
+\begin{itemize}
+    \item Gradient-based optimization (adjoint methods)
+    \item Markov Chain Monte Carlo (MCMC) sampling
+    \item Ensemble Kalman Filtering (EnKF)
+    \item Deep learning surrogate models for parameter emulation
+\end{itemize}
+
+\item \textbf{Generate ensemble of twins}: Each calibration iteration produces a new \hydrot\ instance with updated parameters and corresponding simulation outputs.
+
+\item \textbf{Registry and provenance}: Each calibration run is registered with:
+\begin{itemize}
+    \item Parent twin fingerprint
+    \item Calibration algorithm and hyperparameters
+    \item Likelihood evaluation and posterior statistics
+    \item Authenticated user and timestamp
+\end{itemize}
+\end{enumerate}
+
+\subsection{Uncertainty Quantification}
+
+For uncertainty analysis, \hydrot\ supports:
+
+\begin{itemize}
+\item \textbf{Monte Carlo ensembles}: Generate multiple twins with parameter values sampled from posterior distributions.
+
+\item \textbf{Sensitivity analysis}: Systematically vary parameters and track output variability using:
+\begin{itemize}
+    \item Sobol indices
+    \item Morris screening
+    \item Variance-based decomposition
+\end{itemize}
+
+\item \textbf{Bayesian model averaging}: Combine predictions from multiple structurally different models (multi-model by design) weighted by their posterior probabilities.
+\end{itemize}
+
+Each uncertainty quantification workflow produces a collection of related \hydrot\ instances, all registered and traceable through the universal registry.
+
+\subsection{AI-Enhanced Analysis}
+
+\hydrot\ naturally integrates artificial intelligence methods within its space-state framework:
+
+\begin{itemize}
+\item \textbf{Surrogate models}: Train neural networks or Gaussian processes to emulate expensive physical models. The trained models are versioned as \texttt{Software} objects with full provenance.
+
+\item \textbf{Hybrid physics-AI models}: Combine physically based components with data-driven correction terms. Both components are independently versioned and registered.
+
+\item \textbf{Deep learning for parameter estimation}: Use variational autoencoders or generative adversarial networks to explore high-dimensional parameter spaces. Training data and network architectures are registered as space-state objects.
+\end{itemize}
+
+All AI workflows maintain full traceability: the training data provenance, model architecture, hyperparameters, and learned weights are captured in \texttt{GitSynchroRecord} objects.
+
+\subsection{Output and Validation}
+
+Advanced analysis workflows produce:
+
+\begin{itemize}
+\item Collections of validated \hydrot\ instances representing posterior distributions or ensemble predictions
+\item Diagnostic plots and statistical summaries registered as rendering artifacts
+\item Provenance chains linking calibrated twins to their parent configurations and observational constraints
+\item Immutable registry entries for each analysis step, ensuring reproducibility and audit compliance
+\end{itemize}
+
+% ---------------------------------------------------------------------
+
+\section{Summary: Access Control and Use Case Mapping}
+
+The use cases presented in this chapter illustrate the dual-layer architecture of \hydrot:
+
+\begin{itemize}
+\item \textbf{Public layer}: Enables transparent exploration of simulation results through rendering and aggregated statistics, supporting scientific openness without compromising sensitive information.
+
+\item \textbf{Private layer}: Requires authentication for operations that access raw data, modify parameters, or execute new simulations, ensuring accountability and traceability for all critical actions.
+\end{itemize}
+
+This design reconciles the need for scientific transparency with operational and economic constraints, providing a rigorous foundation for digital hydrology that is both open and secure.
+
+Each use case demonstrates how \hydrot\ operationalizes the architectural principles defined in Chapter 2, ensuring that all workflows---from simple visualization to complex uncertainty quantification---are reproducible, traceable, and audit-ready.
