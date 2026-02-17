@@ -289,6 +289,241 @@ The parameter calibration use case follows this sequence:
 \end{itemize}
 \end{enumerate}
 
+\subsection{The \texttt{.self-fitting()} Method}
+
+The \texttt{.self-fitting()} method provides an integrated, automated calibration workflow within the \hydrot\ framework. This method encapsulates the complete calibration procedure as a native operation accessible only after successful instantiation with private-key authentication.
+
+\subsubsection{Access Requirements and Preconditions}
+
+The \texttt{.self-fitting()} method requires:
+
+\begin{enumerate}
+\item \textbf{Successful twin instantiation}: The method is only accessible after the \hydrot\ instance has been instantiated with full scientific integrity verification.
+
+\item \textbf{Private-key authentication}: As a parameter-modifying operation, \texttt{.self-fitting()} requires authenticated access with a valid private key.
+
+\item \textbf{Certified reproducibility}: The initial simulation state must be certified as reproducible, ensuring that all subsequent calibration iterations maintain traceability.
+
+\item \textbf{Observation data availability}: Target observations must be properly registered in the data layer with complete \texttt{GitSynchroRecord} provenance.
+\end{enumerate}
+
+\subsubsection{Method Signature and Parameters}
+
+The method signature follows the general pattern:
+
+\begin{verbatim}
+twin.self_fitting(
+    target_observations: List[ObservationSet],
+    parameters_to_calibrate: List[ParameterDescriptor],
+    optimization_algorithm: str,
+    convergence_criteria: Dict[str, float],
+    private_key: str,
+    **algorithm_specific_kwargs
+) -> CalibrationResult
+\end{verbatim}
+
+Key parameters include:
+
+\begin{itemize}
+\item \textbf{target\_observations}: A list of observation sets (piezometric heads, discharge measurements, recharge estimates) used as calibration targets. Each observation set must include spatial locations, temporal coverage, and uncertainty estimates.
+
+\item \textbf{parameters\_to\_calibrate}: A structured description of which model parameters should be adjusted, including:
+\begin{itemize}
+    \item Parameter identifiers and spatial supports
+    \item Prior distributions or feasible ranges
+    \item Sensitivity indicators or hierarchical groupings
+\end{itemize}
+
+\item \textbf{optimization\_algorithm}: Selection of the calibration algorithm:
+\begin{itemize}
+    \item \texttt{'gradient\_descent'}: Adjoint-based gradient optimization
+    \item \texttt{'mcmc'}: Markov Chain Monte Carlo sampling
+    \item \texttt{'enkf'}: Ensemble Kalman Filter
+    \item \texttt{'pso'}: Particle Swarm Optimization
+    \item \texttt{'custom'}: User-defined calibration procedure
+\end{itemize}
+
+\item \textbf{convergence\_criteria}: Dictionary specifying when to terminate optimization:
+\begin{itemize}
+    \item \texttt{max\_iterations}: Maximum number of simulation runs
+    \item \texttt{tolerance}: Minimum improvement threshold
+    \item \texttt{objective\_function\_value}: Target goodness-of-fit
+\end{itemize}
+
+\item \textbf{private\_key}: Cryptographic key authenticating the user and authorizing parameter modification operations.
+\end{itemize}
+
+\subsubsection{Self-Fitting Workflow}
+
+The \texttt{.self-fitting()} method executes the following automated procedure:
+
+\begin{enumerate}
+\item \textbf{Authentication and authorization}:
+\begin{itemize}
+    \item Validate the provided private key
+    \item Log the calibration initiation event with user identity and timestamp
+    \item Verify that the twin is in a valid state for calibration
+\end{itemize}
+
+\item \textbf{Objective function definition}:
+\begin{itemize}
+    \item Extract target observation values and spatial-temporal locations
+    \item Define the mismatch metric (RMSE, Nash-Sutcliffe efficiency, log-likelihood)
+    \item Weight different observation types according to their uncertainties
+    \item Establish regularization terms to prevent overfitting
+\end{itemize}
+
+\item \textbf{Parameter space exploration}:
+\begin{itemize}
+    \item Initialize parameter values from prior distributions or user-specified starting points
+    \item For each iteration:
+    \begin{itemize}
+        \item Propose new parameter values according to the optimization algorithm
+        \item Update the model configuration in a controlled manner
+        \item Execute a new simulation run
+        \item Extract simulation outputs at observation locations
+        \item Evaluate the objective function
+        \item Update parameter estimates based on algorithm-specific rules
+    \end{itemize}
+    \item Monitor convergence and detect stagnation or divergence
+\end{itemize}
+
+\item \textbf{Provenance tracking}:
+\begin{itemize}
+    \item Each simulation iteration generates a new \texttt{GitSynchroRecord}
+    \item Parameter values at each iteration are logged with complete provenance
+    \item Objective function evaluations are recorded in the universal registry
+    \item All intermediate twins are registered as a calibration ensemble
+\end{itemize}
+
+\item \textbf{Convergence detection and termination}:
+\begin{itemize}
+    \item Apply convergence criteria to determine when calibration is complete
+    \item Identify the optimal parameter set or posterior distribution
+    \item Generate diagnostic plots (parameter evolution, objective function trajectory)
+    \item Validate that the calibrated twin satisfies physical constraints
+\end{itemize}
+
+\item \textbf{Result instantiation}:
+\begin{itemize}
+    \item Instantiate a new \hydrot\ with the calibrated parameters
+    \item Link this calibrated twin to the initial twin via registry references
+    \item Compute posterior uncertainty estimates if using Bayesian methods
+    \item Generate validation metrics comparing calibrated simulation to observations
+\end{itemize}
+\end{enumerate}
+
+\subsubsection{Registry Integration and Audit Trail}
+
+The \texttt{.self-fitting()} method maintains complete traceability through the universal Git registry:
+
+\begin{itemize}
+\item \textbf{Calibration session record}: A unique identifier for the entire self-fitting operation, including:
+\begin{itemize}
+    \item Initial twin fingerprint (starting configuration)
+    \item Final twin fingerprint (calibrated configuration)
+    \item Authenticated user performing the calibration
+    \item Calibration algorithm and hyperparameters
+    \item Convergence diagnostics and final objective function value
+\end{itemize}
+
+\item \textbf{Iteration-level tracking}: Each simulation iteration during calibration is registered with:
+\begin{itemize}
+    \item Parameter values tested
+    \item Objective function evaluation
+    \item Simulation execution timestamp
+    \item Numerical convergence status
+\end{itemize}
+
+\item \textbf{Observation linkage}: The registry explicitly links the calibrated twin to the observation datasets used as targets, ensuring that:
+\begin{itemize}
+    \item Calibration is reproducible if observation data evolves
+    \item Data provenance is maintained for scientific audit
+    \item Observation updates can trigger recalibration workflows
+\end{itemize}
+\end{itemize}
+
+\subsubsection{Output and Return Values}
+
+The \texttt{.self-fitting()} method returns a \texttt{CalibrationResult} object containing:
+
+\begin{itemize}
+\item \textbf{calibrated\_twin}: A new \hydrot\ instance with optimized parameters
+\item \textbf{parameter\_evolution}: Time series of parameter values across iterations
+\item \textbf{objective\_function\_history}: Trajectory of the objective function during optimization
+\item \textbf{convergence\_diagnostics}: Statistical tests and plots validating convergence
+\item \textbf{validation\_metrics}: Goodness-of-fit statistics comparing calibrated simulation to observations
+\item \textbf{posterior\_distribution}: (if Bayesian) Samples from the posterior parameter distribution
+\item \textbf{registry\_fingerprint}: Unique identifier for this calibration session in the universal registry
+\end{itemize}
+
+\subsubsection{Integration with Estimation Layer}
+
+The \texttt{.self-fitting()} method is implemented as a high-level interface to the Estimation Layer, which provides:
+
+\begin{itemize}
+\item \textbf{Observation extraction}: Methods to retrieve observation values at simulation grid locations
+\item \textbf{Simulation execution}: Controlled interfaces for running the physical model with updated parameters
+\item \textbf{Gradient computation}: Adjoint or finite-difference gradients for gradient-based optimization
+\item \textbf{Likelihood evaluation}: Probabilistic scoring functions for Bayesian inference
+\item \textbf{Ensemble management}: Parallel execution of multiple simulation runs for ensemble methods
+\end{itemize}
+
+\subsubsection{Example: Automatic Calibration of Hydraulic Conductivity}
+
+Consider a typical groundwater model calibration scenario:
+
+\begin{enumerate}
+\item \textbf{Instantiate baseline twin}:
+\begin{verbatim}
+twin = HydrologicalTwin(
+    config=baseline_config,
+    private_key=user_key
+)
+\end{verbatim}
+
+\item \textbf{Define calibration targets}:
+\begin{verbatim}
+observations = [
+    ObservationSet(
+        variable='hydraulic_head',
+        locations=piezometer_network,
+        values=measured_heads,
+        uncertainty=measurement_error
+    )
+]
+\end{verbatim}
+
+\item \textbf{Execute self-fitting}:
+\begin{verbatim}
+result = twin.self_fitting(
+    target_observations=observations,
+    parameters_to_calibrate=[
+        ParameterDescriptor(
+            name='hydraulic_conductivity',
+            spatial_support='aquifer_layer_1',
+            prior='log_normal(mean=-5, std=1)'
+        )
+    ],
+    optimization_algorithm='gradient_descent',
+    convergence_criteria={
+        'max_iterations': 50,
+        'tolerance': 1e-4
+    },
+    private_key=user_key
+)
+\end{verbatim}
+
+\item \textbf{Validate calibrated twin}:
+\begin{verbatim}
+calibrated_twin = result.calibrated_twin
+print(f"Final RMSE: {result.validation_metrics['rmse']}")
+print(f"Nash-Sutcliffe: {result.validation_metrics['nse']}")
+\end{verbatim}
+\end{enumerate}
+
+This workflow demonstrates how \texttt{.self-fitting()} encapsulates complex calibration logic into a single, reproducible method call, while maintaining full provenance tracking through the \hydrot\ architecture.
+
 \subsection{Uncertainty Quantification}
 
 For uncertainty analysis, \hydrot\ supports:

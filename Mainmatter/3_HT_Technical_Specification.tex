@@ -173,6 +173,159 @@ Provides a unified spatial API.
     Returns a DataFrame with \texttt{id\_abs}.
 \end{itemize}
 
+\subsection{\texttt{self\_fitting(...)}}
+
+\textbf{Purpose:}  
+Execute automated parameter calibration with full provenance tracking and private-key authentication.
+
+\textbf{Access Control:}  
+This method requires:
+\begin{itemize}
+    \item Successful twin instantiation with certified reproducibility
+    \item Valid private-key authentication
+    \item Access to registered observation datasets
+\end{itemize}
+
+\textbf{Method Signature:}
+
+\begin{verbatim}
+def self_fitting(
+    self,
+    target_observations: List[ObservationSet],
+    parameters_to_calibrate: List[ParameterDescriptor],
+    optimization_algorithm: str,
+    convergence_criteria: Dict[str, float],
+    private_key: str,
+    **algorithm_kwargs
+) -> CalibrationResult:
+\end{verbatim}
+
+\textbf{Parameters:}
+
+\begin{itemize}
+    \item \texttt{target\_observations}: List of observation sets with spatial locations, values, and uncertainties
+    \item \texttt{parameters\_to\_calibrate}: Structured parameter specifications including priors and constraints
+    \item \texttt{optimization\_algorithm}: Selection of optimization method (\texttt{'gradient\_descent'}, \texttt{'mcmc'}, \texttt{'enkf'}, \texttt{'pso'})
+    \item \texttt{convergence\_criteria}: Dictionary with \texttt{max\_iterations}, \texttt{tolerance}, \texttt{objective\_function\_value}
+    \item \texttt{private\_key}: Cryptographic key for authentication
+    \item \texttt{algorithm\_kwargs}: Algorithm-specific parameters (learning rate, ensemble size, etc.)
+\end{itemize}
+
+\textbf{Return Value:}
+
+Returns a \texttt{CalibrationResult} object containing:
+\begin{itemize}
+    \item \texttt{calibrated\_twin}: New \hydrot\ instance with optimized parameters
+    \item \texttt{parameter\_evolution}: DataFrame tracking parameter values across iterations
+    \item \texttt{objective\_function\_history}: Array of objective function values
+    \item \texttt{convergence\_diagnostics}: Convergence test results and diagnostic plots
+    \item \texttt{validation\_metrics}: Dictionary with RMSE, Nash-Sutcliffe efficiency, and other fit metrics
+    \item \texttt{posterior\_distribution}: (Optional) Posterior samples for Bayesian methods
+    \item \texttt{registry\_fingerprint}: Unique identifier for this calibration session
+\end{itemize}
+
+\textbf{Implementation Architecture:}
+
+The method is implemented as a façade that coordinates multiple backend components:
+
+\begin{enumerate}
+    \item \textbf{Authentication layer}:
+    \begin{verbatim}
+auth_manager.validate_key(private_key)
+auth_manager.log_calibration_event(user_id, timestamp)
+    \end{verbatim}
+
+    \item \textbf{Observation extraction}:
+    \begin{verbatim}
+obs_layer = self.estimation_layer.get_observations()
+target_values = obs_layer.extract_at_locations(
+    target_observations
+)
+    \end{verbatim}
+
+    \item \textbf{Optimization loop}:
+    \begin{verbatim}
+optimizer = OptimizationFactory.create(
+    algorithm=optimization_algorithm,
+    **algorithm_kwargs
+)
+while not optimizer.has_converged(convergence_criteria):
+    params = optimizer.propose_parameters()
+    sim_twin = self.create_variant(params)
+    sim_values = sim_twin.extract_at_locations(
+        target_observations
+    )
+    objective = compute_mismatch(sim_values, target_values)
+    optimizer.update(objective)
+    registry.append(sim_twin, objective, timestamp)
+    \end{verbatim}
+
+    \item \textbf{Result instantiation}:
+    \begin{verbatim}
+optimal_params = optimizer.get_best_parameters()
+calibrated_twin = HydrologicalTwin(
+    config=self.config.with_parameters(optimal_params),
+    private_key=private_key,
+    parent_fingerprint=self.registry_fingerprint
+)
+return CalibrationResult(
+    calibrated_twin=calibrated_twin,
+    diagnostics=optimizer.get_diagnostics()
+)
+    \end{verbatim}
+\end{enumerate}
+
+\textbf{Registry Integration:}
+
+Each calibration session is recorded in the universal Git registry with:
+\begin{itemize}
+    \item Session UUID linking all calibration iterations
+    \item Initial twin fingerprint (starting configuration)
+    \item Final twin fingerprint (calibrated configuration)
+    \item Complete parameter evolution trajectory
+    \item Objective function evaluations with timestamps
+    \item Authenticated user identity and cryptographic signature
+    \item Observation dataset fingerprints used as calibration targets
+\end{itemize}
+
+\textbf{Provenance Chain:}
+
+The calibrated twin maintains bidirectional linkage:
+\begin{verbatim}
+calibrated_twin.provenance = {
+    'parent_twin': self.registry_fingerprint,
+    'calibration_session': session_uuid,
+    'method': 'self_fitting',
+    'algorithm': optimization_algorithm,
+    'observation_datasets': [obs.fingerprint for obs in targets],
+    'user': auth_manager.get_user_id(private_key),
+    'timestamp': datetime.utcnow().isoformat()
+}
+\end{verbatim}
+
+\textbf{Integration with Estimation Layer:}
+
+The \texttt{self\_fitting()} method delegates computational tasks to the Estimation Layer:
+
+\begin{itemize}
+    \item \textbf{Observation management}: \texttt{EstimationLayer.get\_observations()}
+    \item \textbf{Simulation execution}: \texttt{EstimationLayer.run\_simulation(parameters)}
+    \item \textbf{Gradient computation}: \texttt{EstimationLayer.compute\_gradients()} for adjoint methods
+    \item \textbf{Likelihood evaluation}: \texttt{EstimationLayer.evaluate\_likelihood()} for Bayesian inference
+    \item \textbf{Ensemble coordination}: \texttt{EstimationLayer.run\_ensemble()} for EnKF or Monte Carlo
+\end{itemize}
+
+\textbf{Error Handling:}
+
+The method includes comprehensive error checking:
+
+\begin{itemize}
+    \item \textbf{Authentication failures}: Logged and raised as \texttt{AuthenticationError}
+    \item \textbf{Non-convergence}: Logged with partial results and raised as \texttt{ConvergenceWarning}
+    \item \textbf{Simulation failures}: Logged with parameter values and raised as \texttt{SimulationError}
+    \item \textbf{Invalid parameters}: Physical constraints checked before simulation execution
+\end{itemize}
+
 \section{Persistence and Bancarisation}
 
 HT inherits from \texttt{HTPersistenceMixin}, which provides:
