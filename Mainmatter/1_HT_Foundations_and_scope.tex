@@ -119,7 +119,7 @@ Within the ontological state-space, \textbf{private-key authenticated users} can
     \item Access raw state variables and full-resolution data.
     \item Modify parameterizations and execute new simulations.
 \end{itemize}
-Public users interact with a \textbf{restricted state-space subset}, limited to aggregated and/or masked variables.
+Public users interact with a \textbf{restricted state-space subset}, limited to aggregated and  masked variables.
 
 % --- FIN DE L'AJOUT ---
 
@@ -159,17 +159,17 @@ Traceability is enforced for all actions: public operations are openly logged, w
 
 
 % --- NOUVELLE VERSION DE 1.3.6 ---
-\subsection{The Only Private Components: Instantiation, Physical Model Parameterizations and Extraction from Simulation Hyper-Cube}
+\subsection{The \texttt{private-only} Components: Instantiation, Physical Model Parameterizations and Extraction from Simulation Hyper-Cube}
 \label{sec:private-components}
 
 By design, HydrologicalTwin isolates \textbf{three categories of private components}:
 \begin{enumerate}
     \item \textbf{Instantiation}: Creating a new \hydrot\ instance requires private-key authentication to ensure proper provenance tracking and accountability. Instantiation establishes the git-synchronized state of the digital twin and appends it to the universal registry with cryptographic traceability.
     \item \textbf{Physical model parameterizations}: These may encode strategic or proprietary knowledge and are stored in restricted-access repositories. Their existence and version are traceable via \texttt{GitSynchroRecord}, but their numerical content remains confidential.
-    \item \textbf{Data extraction and analysis operations}: Raw simulation data (e.g., full-resolution NumPy hypercubes) and advanced analytical operations (e.g., \texttt{extract\_values}, \texttt{apply\_temporal\_operator}) require \textbf{private-key authentication}. Without a valid key, users are limited to:
+    \item \textbf{Data extraction and analysis operations}: Raw simulation data (e.g., full-resolution NumPy hypercubes) and advanced analytical operations (e.g., \texttt{extract-values}, \texttt{self-fitting}, \texttt{frequency-domain-analysis}, \texttt{bayesian-inversion}) require \textbf{private-key authentication}. Without a valid key, users are limited to:
     \begin{itemize}
-        \item Masked or aggregated outputs (e.g., basin-level averages).
-        \item Visualization layers (e.g., spatial maps, time-series plots) via the \textit{Rendering} layer.
+        \item Masked and aggregated outputs (e.g., basin-level averages, \texttt{apply-temporal-operator}, \texttt{apply-spatial-operator}, both in upscaling mode upper than the simulation resolution).
+        \item Visualization layers (e.g., spatial maps, time-series plots) via the \texttt{Rendering} layer.
     \end{itemize}
 \end{enumerate}
 
@@ -178,9 +178,12 @@ By design, HydrologicalTwin isolates \textbf{three categories of private compone
     \item Public users interact with the twin through a \textbf{restricted API}, accessing only pre-computed or masked data.
     \item Private-key holders unlock full functionality, including:
     \begin{itemize}
+        \item \hydrot\ instantiation
         \item Raw data extraction.
         \item Parameter modification.
-        \item Execution of new simulations.
+        \item Execution of new simulations (forward model execution)
+        \item Uncertainty based on bayesian framework
+        \item AI computing
     \end{itemize}
     \item All private actions are \textbf{cryptographically logged} to ensure traceability and prevent tampering.
 \end{itemize}

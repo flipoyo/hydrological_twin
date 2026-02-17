@@ -17,7 +17,7 @@ This chapter presents the principal use cases of \hydrot, organized according to
 
 % ---------------------------------------------------------------------
 
-\section{Use Case 1: Instantiation and Scientific Integrity Verification}
+\section{Use Case 1: Instantiation and Scientific Integrity Verification - \texttt{private}}
 
 \subsection{Context and Objective}
 
@@ -41,6 +41,9 @@ The instantiation process follows a strict validation sequence:
     \item Parameter repository states
     \item Configuration file versions
 \end{itemize}
+
+TODO: function integrity-check() hydroTwin must verify the integrity of the data by simulating the output dataset (need to build a virtual env, compile the software and execute the simulation, compare the resulting hypercube with the one derived from the input data (user specified simulation outputs). 
+
 
 \item \textbf{Private-key authentication}: The system validates the user's private key and logs the authentication event with:
 \begin{itemize}
@@ -86,24 +89,24 @@ A successfully instantiated \hydrot\ produces:
 
 % ---------------------------------------------------------------------
 
-\section{Use Case 2: Public Visualization and Basic Statistics}
+\section{Use Case 2: Public Visualization and Basic Statistics - \texttt{public}}
 
 \subsection{Context and Objective}
 
-This use case addresses the needs of public users who require access to simulation results for visualization, basic statistical analysis, and spatial exploration without exposing raw data or proprietary parameters. It corresponds to the public rendering capabilities provided through the CaWaQS-ViZ interface.
+This use case addresses the needs of public users who require access to simulation results for visualization, basic statistical analysis, and spatial exploration without exposing raw data or proprietary parameters. It corresponds to the public rendering capabilities provided through the \cwv\ interface.
 
 \subsection{Access Level}
 
 \textbf{Public access (no authentication required).}
 
-Any user can access pre-computed, aggregated, or masked outputs through the rendering layer. This ensures transparency while protecting sensitive information.
+Any user can access simulation results through aggregation (TODO use temporal and spatial operators) and mask using the \texttt{rendering} layer. This ensures transparency while protecting sensitive information.
 
 \subsection{Available Operations}
 
-Public users can perform the following operations through the Cartographic Layer:
+Public users can perform the following operations through the \texttt{rendering} Layer:
 
 \begin{itemize}
-\item \textbf{Spatial visualization}: Display maps of simulated variables (water table elevation, discharge, recharge) with standard symbolization and CRS enforcement.
+\item \textbf{Spatial visualization}: Display maps of simulated variables (water table elevation, discharge, recharge) with standard symbolization and CRS enforcement (TODO explain CRS).
 
 \item \textbf{Temporal visualization}: Plot time series of basin-averaged or station-specific variables.
 
@@ -162,7 +165,7 @@ However, they cannot access proprietary parameters or raw data, ensuring confide
 
 % ---------------------------------------------------------------------
 
-\section{Use Case 3: SubTwin Extraction and Nested Instantiation}
+\section{Use Case 3: SubTwin Extraction and Nested Instantiation - \texttt{private}}
 
 \subsection{Context and Objective}
 
@@ -171,9 +174,9 @@ A common operational requirement is to extract a spatially or temporally refined
 Typical applications include:
 
 \begin{itemize}
-\item Extracting a catchment-scale twin from a regional-scale parent
+\item Extracting a territory-scale twin from a regional-scale parent
 \item Creating a wellfield-focused twin from a territory-scale parent
-\item Generating a time-window-specific twin for detailed analysis of a flood event
+\item Generating a time-window-specific twin for detailed analysis of a specific hydrological  event
 \end{itemize}
 
 \subsection{Access Level}
@@ -242,7 +245,7 @@ The resulting SubTwin is fully traceable: its provenance explicitly documents th
 
 % ---------------------------------------------------------------------
 
-\section{Use Case 4: Advanced Analysis and Uncertainty Quantification}
+\section{Use Case 4: Advanced Analysis and Uncertainty Quantification _ \texttt{private}}
 
 \subsection{Context and Objective}
 
@@ -278,9 +281,9 @@ The parameter calibration use case follows this sequence:
     \item Deep learning surrogate models for parameter emulation
 \end{itemize}
 
-\item \textbf{Generate ensemble of twins}: Each calibration iteration produces a new \hydrot\ instance with updated parameters and corresponding simulation outputs.
+\item \textbf{Generate ensemble of hypercubes: Each calibration iteration produces a new  hypercube instance with updated parameters and corresponding simulation outputs.
 
-\item \textbf{Registry and provenance}: Each calibration run is registered with:
+\item \textbf{Registry and provenance}: Each hypercube is registered with its corresponding meta-data gitSynchronizable :
 \begin{itemize}
     \item Parent twin fingerprint
     \item Calibration algorithm and hyperparameters
