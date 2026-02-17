@@ -338,10 +338,10 @@ Key parameters include:
 \begin{itemize}
     \item \texttt{'gradient\_descent'}: Adjoint-based gradient optimization
     \item \texttt{'mcmc'}: Markov Chain Monte Carlo sampling
-    \item \texttt{'dream'}: DiffeRential Evolution Adaptive Metropolis (Vrugt method)
+    \item \texttt{'temporal\_bayesian\_inference'}: Time-domain Bayesian inference
     \item \texttt{'enkf'}: Ensemble Kalman Filter
     \item \texttt{'pso'}: Particle Swarm Optimization
-    \item \texttt{'multi\_stage\_dream'}: Multi-stage workflow combining frequency and temporal domain calibration with DREAM
+    \item \texttt{'multi\_stage\_bayesian'}: Multi-stage workflow combining frequency and temporal domain calibration with Bayesian inference
     \item \texttt{'custom'}: User-defined calibration procedure
 \end{itemize}
 
@@ -482,9 +482,9 @@ The first stage establishes optimal hydrological process parameters through freq
 \begin{itemize}
 \item \textbf{Conceptual option}: Calibrate using Hydrological Response Units (HRU), rainfall fields, evapotranspiration fields, HRU maps, and discharge time series linked to watersheds
 
-\item \textbf{Energy-based option}: Utilize effective rainfall from a validated conceptual model (e.g., NIHM) over sub-watersheds, validated over long-term periods (typically 17+ years), to minimize the mismatch between effective rainfall and observed discharge
+\item \textbf{Energy-based option}: Utilize effective rainfall from a time-domain forward model (physics-based) validated over long-term periods (typically 17+ years), to minimize the mismatch between effective rainfall and observed discharge
 
-\item \textbf{HYMIT integration}: Apply the HYMIT (Hydrological Model Identification Tool) method to transform effective rainfall into discharge, determining 5 optimal parameters per sub-watershed. This establishes the hydrological observational reference framework. The HYMIT implementation, originally in MATLAB, is transposed to Python for native integration within \hydrot
+\item \textbf{Frequency-domain calibration}: Apply this method to transform effective rainfall into discharge, determining 5 optimal parameters per sub-watershed. This establishes the hydrological observational reference framework. The implementation is natively integrated within \hydrot
 \end{itemize}
 
 \paragraph{Stage 2: Temporal Domain Recharge Parameter Optimization}
@@ -494,9 +494,9 @@ The second stage refines recharge model parameters in the temporal domain:
 \begin{itemize}
 \item \textbf{Conceptual option}: Optimize parameters at the HRU scale
 
-\item \textbf{Energy-based option}: Optimize the conceptual model (NIHM) to reproduce the HYMIT-derived recharge results at the sub-watershed scale
+\item \textbf{Energy-based option}: Optimize the time-domain forward model to reproduce the frequency-domain-derived recharge results at the sub-watershed scale
 
-\item \textbf{DREAM Surface}: Optional application of the DiffeRential Evolution Adaptive Metropolis (DREAM) algorithm for surface process calibration
+\item \textbf{Bayesian Surface Calibration}: Optional application of time-domain Bayesian inference for surface process calibration
 \end{itemize}
 
 \paragraph{Stage 3: Hydrogeological Observational Reference Framework}
@@ -504,13 +504,13 @@ The second stage refines recharge model parameters in the temporal domain:
 The third stage establishes hydrogeological parameters through frequency-domain analysis of subsurface observations:
 
 \begin{itemize}
-\item \textbf{HYMIT hydrological mode}: Derive mean hydraulic diffusivity ($D$) and equivalent conductivity ($K$) per hydrological observation basin from discharge data
+\item \textbf{Frequency-domain hydrological mode}: Derive mean hydraulic diffusivity ($D$) and equivalent conductivity ($K$) per hydrological observation basin from discharge data
 
-\item \textbf{HYMIT piezometric mode}: Estimate transmissivity ($T$) and storativity ($S$) at piezometer locations from groundwater head time series
+\item \textbf{Frequency-domain piezometric mode}: Estimate transmissivity ($T$) and storativity ($S$) at piezometer locations from groundwater head time series
 
-\item \textbf{Cross-validation}: The HYMIT piezometric estimates are validated against pumping test results. Observed systematic biases (HYMIT $K$ values typically exceed geometric mean $K$ from pumping tests) are quantified
+\item \textbf{Cross-validation}: The frequency-domain piezometric estimates are validated against pumping test results. Observed systematic biases (frequency-domain $K$ values typically exceed geometric mean $K$ from pumping tests) are quantified
 
-\item \textbf{Offset computation}: Calculate the offset between geometric-mean HYMIT piezometric parameters and HYMIT hydrological diffusivity on initial parameter fields. This offset is subsequently minimized in temporal domain during Stage 4, maximizing exploitation of all available observations
+\item \textbf{Offset computation}: Calculate the offset between geometric-mean frequency-domain piezometric parameters and frequency-domain hydrological diffusivity on initial parameter fields. This offset is subsequently minimized in temporal domain during Stage 4, maximizing exploitation of all available observations
 \end{itemize}
 
 \paragraph{Stage 4: Bayesian Inversion with Multi-Chain Markov Methods}
@@ -518,13 +518,13 @@ The third stage establishes hydrogeological parameters through frequency-domain 
 The final stage performs comprehensive Bayesian parameter estimation in the temporal domain:
 
 \begin{itemize}
-\item \textbf{DREAM method}: Apply the DiffeRential Evolution Adaptive Metropolis (DREAM) algorithm developed by Vrugt for multi-chain Markov Chain Monte Carlo (MCMC) sampling. This method is implemented in the Molonari.io framework
+\item \textbf{Time-domain Bayesian inference}: Apply time-domain Bayesian inference methods for multi-chain Markov Chain Monte Carlo (MCMC) sampling. This approach provides comprehensive uncertainty quantification through posterior distributions
 
 \item \textbf{Adaptive meshing}: Leverage the hydrogeological observational reference framework (from Stage 3 piezometric analysis) in conjunction with the hydrological reference (from Stage 1 discharge analysis) to define an observationally-constrained adaptive mesh
 
 \item \textbf{Parameter targets}: Optimize hydrogeological parameters ($K/T$ and $S$) across the adaptive mesh
 
-\item \textbf{Uncertainty quantification}: The DREAM method provides both optimal parameter estimates and full posterior distributions, comprehensively characterizing parameter uncertainties
+\item \textbf{Uncertainty quantification}: The Bayesian inference approach provides both optimal parameter estimates and full posterior distributions, comprehensively characterizing parameter uncertainties
 \end{itemize}
 
 \paragraph{Workflow Integration in HydroTwin}
@@ -544,12 +544,12 @@ result = twin.self_fitting(
         'stage_3': ['hydraulic_diffusivity', 'transmissivity'],
         'stage_4': ['conductivity_field', 'storativity_field']
     },
-    optimization_algorithm='multi_stage_dream',
+    optimization_algorithm='multi_stage_bayesian',
     workflow_stages=[
-        {'name': 'frequency_hymit', 'domain': 'frequency'},
+        {'name': 'frequency_domain_calibration', 'domain': 'frequency'},
         {'name': 'temporal_recharge', 'domain': 'temporal'},
         {'name': 'hydrogeological_reference', 'domain': 'frequency'},
-        {'name': 'bayesian_dream', 'domain': 'temporal'}
+        {'name': 'temporal_bayesian_inference', 'domain': 'temporal'}
     ],
     adaptive_meshing=True,
     convergence_criteria={
