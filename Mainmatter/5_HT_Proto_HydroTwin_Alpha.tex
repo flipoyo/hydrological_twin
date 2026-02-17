@@ -1,0 +1,1356 @@
+\chapter{HydroTwin.py \genversion\ series} \label{chap-proto-hydrotwin}
+
+\phantomsection
+\fancyhead[LE]{\thepage} 
+\fancyhead[RE]{\textbf{HydroTwin.py \genversion\ series}}
+\fancyhead[RO]{\thepage} 
+\fancyhead[LO]{\textbf{HydroTwin.py \genversion\ series}}
+\renewcommand{\headrulewidth}{1pt}
+
+\setlength{\parindent}{0cm}
+\setlength{\parskip}{9pt}
+
+% --------------------------------------------------------------
+
+This chapter presents the proto \texttt{HydroTwin.py} implementation, a simplified version of the full \hydrot\ architecture designed for public use within \cwv. The \genversion\ series represents a pragmatic adaptation that retains the conceptual foundations of \hydrot\ while removing authentication requirements and calibration capabilities, making it suitable for visualization, exploration, and basic analysis workflows.
+
+% --------------------------------------------------------------
+
+\section{Scope and Objectives}
+
+\subsection{Design Philosophy}
+
+The \texttt{HydroTwin.py} \genversion\ series is conceived as a downgraded yet functionally complete implementation of the \hydrot\ concept, tailored for public deployment in \cwv. It embodies the following principles:
+
+\begin{itemize}
+    \item \textbf{Public accessibility}: No private-key authentication required, enabling unrestricted access to visualization and analysis capabilities
+    \item \textbf{Simplified provenance}: Basic \texttt{GitSynchroRecord} tracking without cryptographic signatures or authenticated registry operations
+    \item \textbf{Read-only operations}: Full support for data extraction, aggregation, and statistical analysis; no parameter modification or simulation execution
+    \item \textbf{Monolithic backend}: Single-class architecture providing a unified API for \cwv integration
+    \item \textbf{Native persistence}: Serialization support via pickle for caching and reuse across QGIS sessions
+\end{itemize}
+
+This design deliberately excludes capabilities requiring authentication (\ie self-fitting, parameter modification, authenticated simulation execution) while preserving the core value proposition: traceable, reproducible access to hydrological modeling outputs.
+
+\subsection{Relationship to Full \hydrot\ Architecture}
+
+The \genversion\ series can be viewed as the public-facing component of the complete \hydrot\ ecosystem:
+
+\begin{itemize}
+    \item \textbf{Full HydrologicalTwin}: Private-key authenticated, supports calibration (\texttt{self\_fitting()}), parameter modification, simulation execution, Bayesian inference, frequency-domain calibration, multi-stage workflows, cryptographic registry integration
+    \item \textbf{HydroTwin.py \genversion}: Public access, read-only visualization and analysis, simplified provenance, no authentication layer, no calibration capabilities
+\end{itemize}
+
+The \genversion\ implementation serves as both a standalone tool for public users and a testing ground for architectural patterns that inform the full \hydrot\ design. Future development will establish a unified codebase where authentication and access control determine available operations rather than maintaining separate implementations.
+
+% --------------------------------------------------------------
+
+\section{Architectural Overview}
+
+\subsection{Package Structure}
+
+The proto implementation integrates seamlessly with the existing \cwv codebase:
+
+\begin{verbatim}
+cawaqsviz/
+    Compartment.py           # Existing CaWaQS compartment logic
+    Mesh.py                  # Mesh representation
+    Observations.py          # Observation data handling
+    Extraction.py            # Binary data extraction
+    Manage.py                # Temporal, Budget, Spatial utilities
+    interface/
+        Config.py            # Configuration objects
+    ht/
+        __init__.py
+        hydrotwin_alpha.py   # Proto HydroTwin.py α.x implementation
+        provenance.py        # Simplified GitSynchroRecord
+        persistence.py       # Pickle-based serialization
+\end{verbatim}
+
+The \texttt{ht/} subpackage encapsulates the proto implementation while reusing existing \cwv domain logic without modification.
+
+\subsection{Core Classes}
+
+\subsubsection{HydroTwinAlpha}
+
+The central class providing the monolithic backend façade:
+
+\begin{verbatim}
+class HydroTwinAlpha:
+    """
+    Proto Hydrological Twin for public visualization and analysis.
+    
+    Simplified implementation providing read-only access to CaWaQS
+    simulation outputs with basic provenance tracking and persistence.
+    """
+    
+    def __init__(
+        self,
+        config_geometry,
+        config_project,
+        out_caw_directory: str,
+        obs_directory: str,
+        temp_directory: Optional[str] = None
+    ):
+        """Initialize proto HydroTwin instance."""
+        pass
+\end{verbatim}
+
+\subsubsection{SimplifiedGitSynchroRecord}
+
+Minimal provenance tracking without authentication:
+
+\begin{verbatim}
+class SimplifiedGitSynchroRecord:
+    """
+    Simplified version fingerprinting for proto implementation.
+    
+    Captures repository state, commit hash, and timestamps without
+    cryptographic signatures or authenticated registry operations.
+    """
+    
+    def __init__(self, repo_path: str):
+        self.commit_hash = self._get_commit_hash(repo_path)
+        self.branch = self._get_branch(repo_path)
+        self.is_dirty = self._check_dirty_state(repo_path)
+        self.timestamp = datetime.now(timezone.utc)
+        
+    def get_fingerprint(self) -> str:
+        """Compute deterministic fingerprint from git state."""
+        return hashlib.sha256(
+            f"{self.commit_hash}:{self.branch}:{self.is_dirty}"
+            .encode()
+        ).hexdigest()[:16]
+\end{verbatim}
+
+% --------------------------------------------------------------
+
+\section{Public API Specification}
+
+\subsection{Construction and Initialization}
+
+\begin{verbatim}
+twin = HydroTwinAlpha(
+    config_geometry=config_geom,
+    config_project=config_proj,
+    out_caw_directory="/path/to/cawaqsv3.55_outputs",
+    obs_directory="/path/to/observations",
+    temp_directory="/path/to/temp"  # optional
+)
+\end{verbatim}
+
+The constructor performs:
+
+\begin{enumerate}
+    \item Configuration validation
+    \item Service layer instantiation (\texttt{Manage.Temporal}, \texttt{Manage.Budget}, \texttt{Manage.Spatial})
+    \item Simplified provenance record creation
+    \item Internal compartment registry initialization
+\end{enumerate}
+
+\subsection{Data Extraction Methods}
+
+\subsubsection{\texttt{extract\_values()}}
+
+\textbf{Purpose}: Extract time series from \cw binary outputs.
+
+\begin{verbatim}
+response = twin.extract_values(
+    id_compartment: int,
+    variable: str,
+    id_cells: List[int],
+    start_date: str,
+    end_date: str,
+    output_csv: Optional[str] = None
+)
+\end{verbatim}
+
+\textbf{Returns}: \texttt{ExtractValuesResponse} with:
+\begin{itemize}
+    \item \texttt{dataframe}: pandas DataFrame with temporal data
+    \item \texttt{csv\_path}: Path to written CSV (if requested)
+    \item \texttt{metadata}: Dictionary with extraction parameters
+\end{itemize}
+
+\textbf{Implementation}: Wraps \texttt{Manage.Temporal.readSimData()} and \texttt{simMatrixToDf()}.
+
+\subsubsection{\texttt{extract\_observations()}}
+
+\textbf{Purpose}: Load observation data with temporal alignment.
+
+\begin{verbatim}
+response = twin.extract_observations(
+    observation_type: str,  # 'discharge', 'piezometric', etc.
+    location_ids: List[str],
+    start_date: str,
+    end_date: str
+)
+\end{verbatim}
+
+\textbf{Returns}: \texttt{ObservationResponse} with aligned observation DataFrame.
+
+\subsection{Temporal Aggregation Methods}
+
+\subsubsection{\texttt{apply\_temporal\_operator()}}
+
+\textbf{Purpose}: Apply temporal aggregation to time series data.
+
+\begin{verbatim}
+response = twin.apply_temporal_operator(
+    dataframe: pd.DataFrame,
+    operator: str,  # 'annual_mean', 'monthly_sum', 'quantile_95', etc.
+    frequency: str = 'annual'  # 'annual', 'monthly', 'daily'
+)
+\end{verbatim}
+
+\textbf{Supported operators}:
+\begin{itemize}
+    \item \texttt{cumulative}: Temporal cumulative sum
+    \item \texttt{mean}: Average over aggregation period
+    \item \texttt{min}, \texttt{max}: Extrema over period
+    \item \texttt{quantile\_XX}: Quantile (e.g., \texttt{quantile\_95})
+\end{itemize}
+
+\textbf{Implementation}: Delegates to \texttt{Manage.Temporal.aggregate\_matrix()}.
+
+\subsection{Budget Analysis Methods}
+
+\subsubsection{\texttt{compute\_mass\_balance()}}
+
+\textbf{Purpose}: Compute water budget components and mass balance closure.
+
+\begin{verbatim}
+response = twin.compute_mass_balance(
+    id_compartment: int,
+    budget_variables: List[str],
+    start_date: str,
+    end_date: str,
+    frequency: str = 'annual'
+)
+\end{verbatim}
+
+\textbf{Returns}: \texttt{MassBalanceResponse} with:
+\begin{itemize}
+    \item \texttt{budget\_dataframe}: DataFrame with budget components
+    \item \texttt{closure\_error}: Mass balance closure residual
+    \item \texttt{relative\_error}: Closure error as percentage of total inputs
+\end{itemize}
+
+\textbf{Budget variables}: Rainfall, evapotranspiration, infiltration, runoff, groundwater recharge, river-aquifer exchanges, storage change.
+
+\subsection{Spatial Operation Methods}
+
+\subsubsection{\texttt{apply\_spatial\_operator()}}
+
+\textbf{Purpose}: Execute spatial operations for catchment delineation and aquifer outcropping.
+
+\begin{verbatim}
+response = twin.apply_spatial_operator(
+    operator: str,
+    **operator_params
+)
+\end{verbatim}
+
+\textbf{Supported operators}:
+
+\begin{itemize}
+    \item \texttt{catchment\_cells}: Identify cells within a catchment
+    \begin{verbatim}
+twin.apply_spatial_operator(
+    operator='catchment_cells',
+    id_catchment=123
+)
+    \end{verbatim}
+    Returns DataFrame with \texttt{id\_cell} column.
+    
+    \item \texttt{aquifer\_outcropping}: Build aquifer outcropping geometry
+    \begin{verbatim}
+twin.apply_spatial_operator(
+    operator='aquifer_outcropping',
+    id_aquifer=456
+)
+    \end{verbatim}
+    Returns DataFrame with \texttt{id\_abs} and geometry columns.
+\end{itemize}
+
+\subsection{Statistical Analysis Methods}
+
+\subsubsection{\texttt{compute\_performance\_criteria()}}
+
+\textbf{Purpose}: Evaluate simulation performance against observations.
+
+\begin{verbatim}
+response = twin.compute_performance_criteria(
+    simulated: pd.DataFrame,
+    observed: pd.DataFrame,
+    criteria: List[str] = ['NSE', 'RMSE', 'KGE', 'PBIAS']
+)
+\end{verbatim}
+
+\textbf{Supported criteria}:
+\begin{itemize}
+    \item \texttt{NSE}: Nash-Sutcliffe Efficiency
+    \item \texttt{RMSE}: Root Mean Square Error
+    \item \texttt{KGE}: Kling-Gupta Efficiency
+    \item \texttt{PBIAS}: Percent Bias
+    \item \texttt{R2}: Coefficient of determination
+\end{itemize}
+
+\textbf{Returns}: \texttt{PerformanceCriteriaResponse} with dictionary of computed statistics.
+
+\subsection{Compartment Management}
+
+\subsubsection{\texttt{get\_compartment()}}
+
+Internal method providing on-demand compartment instantiation:
+
+\begin{verbatim}
+compartment = twin.get_compartment(id_compartment: int)
+\end{verbatim}
+
+This method maintains an internal registry:
+
+\begin{verbatim}
+self.compartments: Dict[int, Compartment] = {}
+\end{verbatim}
+
+Compartments are built lazily on first access and cached for subsequent operations.
+
+\textbf{Note}: The \cwv GUI must never instantiate \texttt{Compartment} objects directly. All access proceeds through \texttt{HydroTwinAlpha} methods.
+
+% --------------------------------------------------------------
+
+\section{Provenance and Traceability}
+
+\subsection{Simplified Git Provenance}
+
+The \genversion\ implementation includes basic provenance tracking through \texttt{SimplifiedGitSynchroRecord}:
+
+\begin{verbatim}
+# Automatic provenance capture on instantiation
+twin = HydroTwinAlpha(...)
+
+# Access provenance information
+fingerprint = twin.provenance.get_fingerprint()
+commit_hash = twin.provenance.commit_hash
+branch_name = twin.provenance.branch
+is_dirty = twin.provenance.is_dirty
+timestamp = twin.provenance.timestamp
+\end{verbatim}
+
+This provides sufficient traceability for visualization workflows while avoiding the cryptographic complexity of authenticated registry operations.
+
+\subsection{Operation Logging}
+
+All API operations are logged with timestamp and provenance context:
+
+\begin{verbatim}
+2026-02-17T18:45:23Z [HydroTwinAlpha:a3f8d92c] extract_values()
+  compartment=1, variable='discharge', cells=[1,2,3]
+  fingerprint=a3f8d92c4e5f6789
+  
+2026-02-17T18:46:01Z [HydroTwinAlpha:a3f8d92c] compute_mass_balance()
+  compartment=1, frequency='annual'
+  fingerprint=a3f8d92c4e5f6789
+\end{verbatim}
+
+Logs are written to \texttt{temp\_directory/hydrotwin\_alpha.log}.
+
+% --------------------------------------------------------------
+
+\section{Persistence and Serialization}
+
+\subsection{Pickle-Based Caching}
+
+The \texttt{HydroTwinAlpha} class supports persistence via Python pickle:
+
+\begin{verbatim}
+# Save twin instance
+twin.to_pickle("/path/to/cache/twin_snapshot.pkl")
+
+# Load twin instance
+twin = HydroTwinAlpha.from_pickle("/path/to/cache/twin_snapshot.pkl")
+\end{verbatim}
+
+\subsection{Serialization Format}
+
+Each pickle file contains:
+
+\begin{verbatim}
+{
+    'schema_version': '1.0.0',
+    'class_name': 'HydroTwinAlpha',
+    'provenance': {
+        'commit_hash': 'abc123...',
+        'branch': 'main',
+        'is_dirty': False,
+        'timestamp': '2026-02-17T18:30:00Z',
+        'fingerprint': 'a3f8d92c4e5f6789'
+    },
+    'config': {
+        'config_geometry': <serialized>,
+        'config_project': <serialized>,
+        'out_caw_directory': '/path/to/outputs',
+        'obs_directory': '/path/to/obs',
+        'temp_directory': '/path/to/temp'
+    },
+    'compartments': {
+        # Cached compartment instances
+    }
+}
+\end{verbatim}
+
+\subsection{Cache Validation}
+
+On loading from pickle, the system performs validation:
+
+\begin{enumerate}
+    \item Schema version compatibility check
+    \item Configuration path verification
+    \item Provenance fingerprint computation
+    \item Optional: warn if loaded twin differs from current repository state
+\end{enumerate}
+
+% --------------------------------------------------------------
+
+\section{Integration with CaWaQS-Viz}
+
+\subsection{QGIS Plugin Architecture}
+
+The \cwv QGIS plugin integrates \texttt{HydroTwinAlpha} as its exclusive backend:
+
+\begin{verbatim}
+# cawaqsviz/interface/main.py
+
+from cawaqsviz.ht.hydrotwin_alpha import HydroTwinAlpha
+
+class CaWaQSVizPlugin:
+    def __init__(self):
+        self.twin = None
+        
+    def load_project(self, config_geometry, config_project, 
+                     out_dir, obs_dir):
+        """Initialize HydroTwin backend on project load."""
+        self.twin = HydroTwinAlpha(
+            config_geometry=config_geometry,
+            config_project=config_project,
+            out_caw_directory=out_dir,
+            obs_directory=obs_dir
+        )
+        
+    def extract_and_plot(self, id_compartment, variable, 
+                         cells, dates):
+        """Example: Extract data and generate plot."""
+        response = self.twin.extract_values(
+            id_compartment=id_compartment,
+            variable=variable,
+            id_cells=cells,
+            start_date=dates[0],
+            end_date=dates[1]
+        )
+        
+        # Pass DataFrame to plotting dialog
+        self.plot_dialog.display(response.dataframe)
+\end{verbatim}
+
+\subsection{Dialog Integration}
+
+Each \cwv dialog accesses data exclusively through \texttt{HydroTwinAlpha}:
+
+\begin{itemize}
+    \item \textbf{Spatial Map Dialog}: \texttt{extract\_values()} + \texttt{apply\_temporal\_operator()}
+    \item \textbf{Budget Dialog}: \texttt{compute\_mass\_balance()}
+    \item \textbf{Regime Analysis Dialog}: \texttt{extract\_values()} + \texttt{extract\_observations()}
+    \item \textbf{Performance Criteria Dialog}: \texttt{compute\_performance\_criteria()}
+    \item \textbf{Catchment Tools}: \texttt{apply\_spatial\_operator(operator='catchment\_cells')}
+\end{itemize}
+
+This ensures:
+\begin{itemize}
+    \item Single source of truth for data access
+    \item Consistent provenance tracking across all dialogs
+    \item Unified caching strategy
+    \item Simplified testing and maintenance
+\end{itemize}
+
+% --------------------------------------------------------------
+
+\section{Complete Implementation}
+
+\subsection{File: \texttt{ht/hydrotwin\_alpha.py}}
+
+The complete proto implementation follows:
+
+\begin{lstlisting}[language=Python,basicstyle=\ttfamily\small,frame=single,caption={HydroTwin.py \genversion\ series implementation}]
+"""
+HydroTwin.py alpha.x series - Proto implementation for CaWaQS-Viz
+
+Simplified Hydrological Twin providing public read-only access to
+CaWaQS simulation outputs with basic provenance tracking.
+"""
+
+import os
+import pickle
+from typing import Dict, List, Optional, Any
+from dataclasses import dataclass
+from datetime import datetime, timezone
+import hashlib
+import logging
+import subprocess
+
+import pandas as pd
+import numpy as np
+
+
+# Configure logging
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s [%(name)s] %(message)s',
+    datefmt='%Y-%m-%dT%H:%M:%SZ'
+)
+
+
+@dataclass
+class SimplifiedGitSynchroRecord:
+    """
+    Simplified version fingerprinting for proto implementation.
+    
+    Captures repository state, commit hash, and timestamps without
+    cryptographic signatures or authenticated registry operations.
+    """
+    commit_hash: str
+    branch: str
+    is_dirty: bool
+    timestamp: datetime
+    
+    @classmethod
+    def from_repo(cls, repo_path: str) -> 'SimplifiedGitSynchroRecord':
+        """Create provenance record from git repository."""
+        try:
+            # Get commit hash
+            commit_hash = subprocess.check_output(
+                ['git', '-C', repo_path, 'rev-parse', 'HEAD'],
+                stderr=subprocess.DEVNULL,
+                text=True
+            ).strip()
+            
+            # Get branch name
+            branch = subprocess.check_output(
+                ['git', '-C', repo_path, 'rev-parse', 
+                 '--abbrev-ref', 'HEAD'],
+                stderr=subprocess.DEVNULL,
+                text=True
+            ).strip()
+            
+            # Check dirty state
+            status = subprocess.check_output(
+                ['git', '-C', repo_path, 'status', '--porcelain'],
+                stderr=subprocess.DEVNULL,
+                text=True
+            )
+            is_dirty = len(status.strip()) > 0
+            
+            return cls(
+                commit_hash=commit_hash,
+                branch=branch,
+                is_dirty=is_dirty,
+                timestamp=datetime.now(timezone.utc)
+            )
+        except (subprocess.CalledProcessError, FileNotFoundError):
+            # Fallback for non-git environments
+            return cls(
+                commit_hash='unknown',
+                branch='unknown',
+                is_dirty=False,
+                timestamp=datetime.now(timezone.utc)
+            )
+    
+    def get_fingerprint(self) -> str:
+        """Compute deterministic fingerprint from git state."""
+        state_string = f"{self.commit_hash}:{self.branch}:{self.is_dirty}"
+        return hashlib.sha256(state_string.encode()).hexdigest()[:16]
+
+
+@dataclass
+class ExtractValuesResponse:
+    """Response object for extract_values() operation."""
+    dataframe: pd.DataFrame
+    csv_path: Optional[str]
+    metadata: Dict[str, Any]
+
+
+@dataclass
+class ObservationResponse:
+    """Response object for extract_observations() operation."""
+    dataframe: pd.DataFrame
+    metadata: Dict[str, Any]
+
+
+@dataclass
+class TemporalOperatorResponse:
+    """Response object for apply_temporal_operator() operation."""
+    dataframe: pd.DataFrame
+    operator: str
+    frequency: str
+    metadata: Dict[str, Any]
+
+
+@dataclass
+class MassBalanceResponse:
+    """Response object for compute_mass_balance() operation."""
+    budget_dataframe: pd.DataFrame
+    closure_error: float
+    relative_error: float
+    metadata: Dict[str, Any]
+
+
+@dataclass
+class SpatialOperatorResponse:
+    """Response object for apply_spatial_operator() operation."""
+    dataframe: pd.DataFrame
+    operator: str
+    metadata: Dict[str, Any]
+
+
+@dataclass
+class PerformanceCriteriaResponse:
+    """Response object for compute_performance_criteria() operation."""
+    criteria: Dict[str, float]
+    metadata: Dict[str, Any]
+
+
+class HydroTwinAlpha:
+    """
+    Proto Hydrological Twin for public visualization and analysis.
+    
+    Simplified implementation providing read-only access to CaWaQS
+    simulation outputs with basic provenance tracking and persistence.
+    
+    This alpha.x series implementation excludes authentication and
+    calibration capabilities, focusing on visualization and exploratory
+    analysis for public users.
+    """
+    
+    SCHEMA_VERSION = "1.0.0"
+    
+    def __init__(
+        self,
+        config_geometry,
+        config_project,
+        out_caw_directory: str,
+        obs_directory: str,
+        temp_directory: Optional[str] = None
+    ):
+        """
+        Initialize proto HydroTwin instance.
+        
+        Parameters
+        ----------
+        config_geometry : ConfigGeometry
+            CaWaQS geometry configuration
+        config_project : ConfigProject
+            CaWaQS project configuration (regime, etc.)
+        out_caw_directory : str
+            Root directory for CaWaQS binary outputs
+        obs_directory : str
+            Root directory for observation data
+        temp_directory : str, optional
+            Temporary directory for intermediate files
+            Defaults to out_caw_directory if not provided
+        """
+        # Store configuration
+        self.config_geometry = config_geometry
+        self.config_project = config_project
+        self.out_caw_directory = out_caw_directory
+        self.obs_directory = obs_directory
+        self.temp_directory = temp_directory or out_caw_directory
+        
+        # Initialize provenance
+        self.provenance = SimplifiedGitSynchroRecord.from_repo(
+            self.out_caw_directory
+        )
+        
+        # Initialize compartment registry
+        self.compartments: Dict[int, Any] = {}
+        
+        # Initialize service layers (imported from existing cawaqsviz)
+        from cawaqsviz.Manage import Temporal, Budget, Spatial
+        self.temporal_service = Temporal()
+        self.budget_service = Budget()
+        self.spatial_service = Spatial()
+        
+        # Setup logging
+        self.logger = logging.getLogger(
+            f"HydroTwinAlpha:{self.provenance.get_fingerprint()}"
+        )
+        
+        self.logger.info(
+            f"Initialized HydroTwinAlpha "
+            f"[{self.provenance.commit_hash[:8]}] "
+            f"branch={self.provenance.branch} "
+            f"dirty={self.provenance.is_dirty}"
+        )
+    
+    def get_compartment(self, id_compartment: int):
+        """
+        Retrieve or build compartment instance.
+        
+        Parameters
+        ----------
+        id_compartment : int
+            Compartment identifier
+            
+        Returns
+        -------
+        Compartment
+            Compartment instance (cached)
+        """
+        if id_compartment not in self.compartments:
+            from cawaqsviz.Compartment import Compartment
+            self.compartments[id_compartment] = Compartment(
+                id_compartment=id_compartment,
+                config_geometry=self.config_geometry,
+                config_project=self.config_project,
+                out_caw_directory=self.out_caw_directory,
+                obs_directory=self.obs_directory,
+                temp_directory=self.temp_directory
+            )
+            self.logger.info(f"Built compartment {id_compartment}")
+        
+        return self.compartments[id_compartment]
+    
+    def extract_values(
+        self,
+        id_compartment: int,
+        variable: str,
+        id_cells: List[int],
+        start_date: str,
+        end_date: str,
+        output_csv: Optional[str] = None
+    ) -> ExtractValuesResponse:
+        """
+        Extract time series from CaWaQS binary outputs.
+        
+        Parameters
+        ----------
+        id_compartment : int
+            Compartment identifier
+        variable : str
+            Variable name ('discharge', 'piezometric', 'recharge', etc.)
+        id_cells : List[int]
+            List of cell/node identifiers
+        start_date : str
+            Start date (ISO format: 'YYYY-MM-DD')
+        end_date : str
+            End date (ISO format: 'YYYY-MM-DD')
+        output_csv : str, optional
+            Path to write CSV output
+            
+        Returns
+        -------
+        ExtractValuesResponse
+            Response with DataFrame and metadata
+        """
+        self.logger.info(
+            f"extract_values() compartment={id_compartment} "
+            f"variable={variable} cells={len(id_cells)}"
+        )
+        
+        # Get compartment
+        comp = self.get_compartment(id_compartment)
+        
+        # Read simulation data using existing Manage.Temporal
+        sim_data = self.temporal_service.readSimData(
+            compartment=comp,
+            variable=variable,
+            id_cells=id_cells,
+            start_date=start_date,
+            end_date=end_date
+        )
+        
+        # Convert to DataFrame
+        df = self.temporal_service.simMatrixToDf(
+            sim_data=sim_data,
+            id_cells=id_cells,
+            start_date=start_date,
+            end_date=end_date
+        )
+        
+        # Optionally write CSV
+        csv_path = None
+        if output_csv:
+            df.to_csv(output_csv, sep='\t', index=True)
+            csv_path = output_csv
+            self.logger.info(f"Wrote CSV: {csv_path}")
+        
+        return ExtractValuesResponse(
+            dataframe=df,
+            csv_path=csv_path,
+            metadata={
+                'id_compartment': id_compartment,
+                'variable': variable,
+                'n_cells': len(id_cells),
+                'start_date': start_date,
+                'end_date': end_date,
+                'fingerprint': self.provenance.get_fingerprint()
+            }
+        )
+    
+    def extract_observations(
+        self,
+        observation_type: str,
+        location_ids: List[str],
+        start_date: str,
+        end_date: str
+    ) -> ObservationResponse:
+        """
+        Load observation data with temporal alignment.
+        
+        Parameters
+        ----------
+        observation_type : str
+            Type of observations ('discharge', 'piezometric', etc.)
+        location_ids : List[str]
+            List of observation location identifiers
+        start_date : str
+            Start date (ISO format: 'YYYY-MM-DD')
+        end_date : str
+            End date (ISO format: 'YYYY-MM-DD')
+            
+        Returns
+        -------
+        ObservationResponse
+            Response with observation DataFrame and metadata
+        """
+        self.logger.info(
+            f"extract_observations() type={observation_type} "
+            f"locations={len(location_ids)}"
+        )
+        
+        from cawaqsviz.Observations import Observations
+        
+        obs = Observations(
+            obs_directory=self.obs_directory,
+            observation_type=observation_type
+        )
+        
+        df = obs.load_observations(
+            location_ids=location_ids,
+            start_date=start_date,
+            end_date=end_date
+        )
+        
+        return ObservationResponse(
+            dataframe=df,
+            metadata={
+                'observation_type': observation_type,
+                'n_locations': len(location_ids),
+                'start_date': start_date,
+                'end_date': end_date,
+                'fingerprint': self.provenance.get_fingerprint()
+            }
+        )
+    
+    def apply_temporal_operator(
+        self,
+        dataframe: pd.DataFrame,
+        operator: str,
+        frequency: str = 'annual'
+    ) -> TemporalOperatorResponse:
+        """
+        Apply temporal aggregation to time series data.
+        
+        Parameters
+        ----------
+        dataframe : pd.DataFrame
+            Input time series DataFrame
+        operator : str
+            Aggregation operator ('cumulative', 'mean', 'min', 
+            'max', 'quantile_XX')
+        frequency : str
+            Temporal frequency ('annual', 'monthly', 'daily')
+            
+        Returns
+        -------
+        TemporalOperatorResponse
+            Response with aggregated DataFrame and metadata
+        """
+        self.logger.info(
+            f"apply_temporal_operator() operator={operator} "
+            f"frequency={frequency}"
+        )
+        
+        # Delegate to existing Manage.Temporal
+        aggregated_df = self.temporal_service.aggregate_matrix(
+            dataframe=dataframe,
+            operator=operator,
+            frequency=frequency
+        )
+        
+        return TemporalOperatorResponse(
+            dataframe=aggregated_df,
+            operator=operator,
+            frequency=frequency,
+            metadata={
+                'input_shape': dataframe.shape,
+                'output_shape': aggregated_df.shape,
+                'fingerprint': self.provenance.get_fingerprint()
+            }
+        )
+    
+    def compute_mass_balance(
+        self,
+        id_compartment: int,
+        budget_variables: List[str],
+        start_date: str,
+        end_date: str,
+        frequency: str = 'annual'
+    ) -> MassBalanceResponse:
+        """
+        Compute water budget components and mass balance closure.
+        
+        Parameters
+        ----------
+        id_compartment : int
+            Compartment identifier
+        budget_variables : List[str]
+            List of budget variables to include
+        start_date : str
+            Start date (ISO format: 'YYYY-MM-DD')
+        end_date : str
+            End date (ISO format: 'YYYY-MM-DD')
+        frequency : str
+            Temporal frequency for budget computation
+            
+        Returns
+        -------
+        MassBalanceResponse
+            Response with budget DataFrame and closure diagnostics
+        """
+        self.logger.info(
+            f"compute_mass_balance() compartment={id_compartment} "
+            f"variables={len(budget_variables)}"
+        )
+        
+        comp = self.get_compartment(id_compartment)
+        
+        # Compute budget using existing Manage.Budget
+        budget_result = self.budget_service.calcInteranualBVariable(
+            compartment=comp,
+            variables=budget_variables,
+            start_date=start_date,
+            end_date=end_date,
+            frequency=frequency
+        )
+        
+        # Extract results
+        budget_df = budget_result['dataframe']
+        closure_error = budget_result['closure_error']
+        relative_error = budget_result['relative_error']
+        
+        return MassBalanceResponse(
+            budget_dataframe=budget_df,
+            closure_error=closure_error,
+            relative_error=relative_error,
+            metadata={
+                'id_compartment': id_compartment,
+                'n_variables': len(budget_variables),
+                'frequency': frequency,
+                'fingerprint': self.provenance.get_fingerprint()
+            }
+        )
+    
+    def apply_spatial_operator(
+        self,
+        operator: str,
+        **operator_params
+    ) -> SpatialOperatorResponse:
+        """
+        Execute spatial operations for catchment delineation and
+        aquifer outcropping.
+        
+        Parameters
+        ----------
+        operator : str
+            Spatial operator name ('catchment_cells', 
+            'aquifer_outcropping')
+        **operator_params
+            Operator-specific parameters
+            
+        Returns
+        -------
+        SpatialOperatorResponse
+            Response with spatial operation results
+        """
+        self.logger.info(
+            f"apply_spatial_operator() operator={operator}"
+        )
+        
+        if operator == 'catchment_cells':
+            id_catchment = operator_params['id_catchment']
+            df = self.spatial_service.getCatchmentCellsIds(
+                id_catchment=id_catchment
+            )
+        elif operator == 'aquifer_outcropping':
+            id_aquifer = operator_params['id_aquifer']
+            df = self.spatial_service.buildAqOutcropping(
+                id_aquifer=id_aquifer
+            )
+        else:
+            raise ValueError(f"Unknown spatial operator: {operator}")
+        
+        return SpatialOperatorResponse(
+            dataframe=df,
+            operator=operator,
+            metadata={
+                'operator_params': operator_params,
+                'fingerprint': self.provenance.get_fingerprint()
+            }
+        )
+    
+    def compute_performance_criteria(
+        self,
+        simulated: pd.DataFrame,
+        observed: pd.DataFrame,
+        criteria: List[str] = None
+    ) -> PerformanceCriteriaResponse:
+        """
+        Evaluate simulation performance against observations.
+        
+        Parameters
+        ----------
+        simulated : pd.DataFrame
+            Simulated time series
+        observed : pd.DataFrame
+            Observed time series
+        criteria : List[str], optional
+            List of criteria to compute
+            Defaults to ['NSE', 'RMSE', 'KGE', 'PBIAS']
+            
+        Returns
+        -------
+        PerformanceCriteriaResponse
+            Response with computed performance statistics
+        """
+        if criteria is None:
+            criteria = ['NSE', 'RMSE', 'KGE', 'PBIAS']
+        
+        self.logger.info(
+            f"compute_performance_criteria() criteria={criteria}"
+        )
+        
+        results = {}
+        
+        # Align dataframes
+        aligned_sim, aligned_obs = simulated.align(
+            observed, join='inner'
+        )
+        
+        sim_vals = aligned_sim.values.flatten()
+        obs_vals = aligned_obs.values.flatten()
+        
+        # Remove NaN values
+        mask = ~(np.isnan(sim_vals) | np.isnan(obs_vals))
+        sim_vals = sim_vals[mask]
+        obs_vals = obs_vals[mask]
+        
+        if len(sim_vals) == 0:
+            raise ValueError("No valid data points for criteria computation")
+        
+        # Compute criteria
+        if 'NSE' in criteria:
+            # Nash-Sutcliffe Efficiency
+            numerator = np.sum((obs_vals - sim_vals) ** 2)
+            denominator = np.sum((obs_vals - np.mean(obs_vals)) ** 2)
+            results['NSE'] = 1 - (numerator / denominator)
+        
+        if 'RMSE' in criteria:
+            # Root Mean Square Error
+            results['RMSE'] = np.sqrt(
+                np.mean((obs_vals - sim_vals) ** 2)
+            )
+        
+        if 'KGE' in criteria:
+            # Kling-Gupta Efficiency
+            r = np.corrcoef(obs_vals, sim_vals)[0, 1]
+            alpha = np.std(sim_vals) / np.std(obs_vals)
+            beta = np.mean(sim_vals) / np.mean(obs_vals)
+            results['KGE'] = 1 - np.sqrt(
+                (r - 1)**2 + (alpha - 1)**2 + (beta - 1)**2
+            )
+        
+        if 'PBIAS' in criteria:
+            # Percent Bias
+            results['PBIAS'] = 100 * np.sum(
+                sim_vals - obs_vals
+            ) / np.sum(obs_vals)
+        
+        if 'R2' in criteria:
+            # Coefficient of determination
+            results['R2'] = np.corrcoef(obs_vals, sim_vals)[0, 1] ** 2
+        
+        return PerformanceCriteriaResponse(
+            criteria=results,
+            metadata={
+                'n_points': len(sim_vals),
+                'fingerprint': self.provenance.get_fingerprint()
+            }
+        )
+    
+    def to_pickle(self, path: str) -> None:
+        """
+        Serialize HydroTwin instance to pickle file.
+        
+        Parameters
+        ----------
+        path : str
+            Output pickle file path
+        """
+        self.logger.info(f"Serializing to pickle: {path}")
+        
+        snapshot = {
+            'schema_version': self.SCHEMA_VERSION,
+            'class_name': 'HydroTwinAlpha',
+            'provenance': {
+                'commit_hash': self.provenance.commit_hash,
+                'branch': self.provenance.branch,
+                'is_dirty': self.provenance.is_dirty,
+                'timestamp': self.provenance.timestamp.isoformat(),
+                'fingerprint': self.provenance.get_fingerprint()
+            },
+            'config': {
+                'config_geometry': self.config_geometry,
+                'config_project': self.config_project,
+                'out_caw_directory': self.out_caw_directory,
+                'obs_directory': self.obs_directory,
+                'temp_directory': self.temp_directory
+            },
+            'compartments': self.compartments
+        }
+        
+        with open(path, 'wb') as f:
+            pickle.dump(snapshot, f, protocol=pickle.HIGHEST_PROTOCOL)
+        
+        self.logger.info(f"Pickle written: {path}")
+    
+    @classmethod
+    def from_pickle(cls, path: str) -> 'HydroTwinAlpha':
+        """
+        Deserialize HydroTwin instance from pickle file.
+        
+        Parameters
+        ----------
+        path : str
+            Input pickle file path
+            
+        Returns
+        -------
+        HydroTwinAlpha
+            Restored HydroTwin instance
+        """
+        with open(path, 'rb') as f:
+            snapshot = pickle.load(f)
+        
+        # Validate schema version
+        if snapshot['schema_version'] != cls.SCHEMA_VERSION:
+            raise ValueError(
+                f"Incompatible schema version: "
+                f"{snapshot['schema_version']} != {cls.SCHEMA_VERSION}"
+            )
+        
+        # Validate class name
+        if snapshot['class_name'] != 'HydroTwinAlpha':
+            raise ValueError(
+                f"Invalid class name: {snapshot['class_name']}"
+            )
+        
+        # Reconstruct instance
+        config = snapshot['config']
+        instance = cls(
+            config_geometry=config['config_geometry'],
+            config_project=config['config_project'],
+            out_caw_directory=config['out_caw_directory'],
+            obs_directory=config['obs_directory'],
+            temp_directory=config['temp_directory']
+        )
+        
+        # Restore compartments
+        instance.compartments = snapshot['compartments']
+        
+        instance.logger.info(
+            f"Loaded from pickle: {path} "
+            f"[{snapshot['provenance']['fingerprint']}]"
+        )
+        
+        return instance
+\end{lstlisting}
+
+% --------------------------------------------------------------
+
+\section{Usage Examples}
+
+\subsection{Basic Workflow}
+
+\begin{verbatim}
+from cawaqsviz.ht.hydrotwin_alpha import HydroTwinAlpha
+
+# Initialize twin
+twin = HydroTwinAlpha(
+    config_geometry=geom_config,
+    config_project=proj_config,
+    out_caw_directory="/data/cawaqsv3.55_outputs",
+    obs_directory="/data/observations"
+)
+
+# Extract discharge time series
+response = twin.extract_values(
+    id_compartment=1,
+    variable='discharge',
+    id_cells=[101, 102, 103],
+    start_date='2020-01-01',
+    end_date='2023-12-31'
+)
+
+df = response.dataframe
+print(df.head())
+
+# Apply annual aggregation
+agg_response = twin.apply_temporal_operator(
+    dataframe=df,
+    operator='mean',
+    frequency='annual'
+)
+
+print(agg_response.dataframe)
+
+# Save for reuse
+twin.to_pickle("/cache/twin_snapshot.pkl")
+\end{verbatim}
+
+\subsection{Budget Analysis Workflow}
+
+\begin{verbatim}
+# Compute water budget
+budget_response = twin.compute_mass_balance(
+    id_compartment=1,
+    budget_variables=[
+        'rainfall', 'evapotranspiration', 'infiltration',
+        'runoff', 'recharge', 'storage_change'
+    ],
+    start_date='2020-01-01',
+    end_date='2023-12-31',
+    frequency='annual'
+)
+
+print(f"Closure error: {budget_response.closure_error:.2f} mm")
+print(f"Relative error: {budget_response.relative_error:.2%}")
+print(budget_response.budget_dataframe)
+\end{verbatim}
+
+\subsection{Performance Evaluation Workflow}
+
+\begin{verbatim}
+# Extract simulated discharge
+sim_response = twin.extract_values(
+    id_compartment=1,
+    variable='discharge',
+    id_cells=[205],
+    start_date='2020-01-01',
+    end_date='2023-12-31'
+)
+
+# Extract observed discharge
+obs_response = twin.extract_observations(
+    observation_type='discharge',
+    location_ids=['STATION_205'],
+    start_date='2020-01-01',
+    end_date='2023-12-31'
+)
+
+# Compute performance criteria
+perf_response = twin.compute_performance_criteria(
+    simulated=sim_response.dataframe,
+    observed=obs_response.dataframe,
+    criteria=['NSE', 'RMSE', 'KGE', 'PBIAS', 'R2']
+)
+
+print("Performance Criteria:")
+for criterion, value in perf_response.criteria.items():
+    print(f"  {criterion}: {value:.3f}")
+\end{verbatim}
+
+% --------------------------------------------------------------
+
+\section{Limitations and Future Development}
+
+\subsection{Current Limitations}
+
+The \genversion\ series deliberately excludes:
+
+\begin{itemize}
+    \item \textbf{Authentication}: No private-key validation or cryptographic signatures
+    \item \textbf{Calibration}: No \texttt{self\_fitting()} method or parameter optimization
+    \item \textbf{Simulation execution}: No direct model run capabilities
+    \item \textbf{Parameter modification}: Read-only access to configurations
+    \item \textbf{Registry integration}: No authenticated append to universal Git registry
+    \item \textbf{Bayesian inference}: No MCMC or ensemble methods
+    \item \textbf{Frequency-domain calibration}: No HYMIT-style parameter identification
+\end{itemize}
+
+These omissions are intentional, establishing a clear boundary between public visualization capabilities and authenticated modeling operations.
+
+\subsection{Roadmap to Full HydrologicalTwin}
+
+The transition from \genversion\ to full \hydrot\ involves:
+
+\begin{enumerate}
+    \item \textbf{Authentication layer}: Integrate private-key validation and cryptographic signature generation
+    \item \textbf{Registry integration}: Connect to universal Git registry with hash-chained provenance
+    \item \textbf{Estimation layer}: Implement \texttt{EstimationLayer} for calibration workflows
+    \item \textbf{Simulation execution}: Enable authenticated model runs with parameter variant creation
+    \item \textbf{Bayesian methods}: Integrate time-domain Bayesian inference (MCMC, EnKF)
+    \item \textbf{Frequency-domain methods}: Integrate frequency-domain calibration for efficient parameter identification
+    \item \textbf{Multi-stage workflows}: Support complex calibration sequences across physical processes
+\end{enumerate}
+
+\subsection{Unified Codebase Strategy}
+
+Future development aims for a unified implementation where access control determines available operations:
+
+\begin{verbatim}
+# Public instantiation (no authentication)
+twin_public = HydrologicalTwin(
+    config=config,
+    access_mode='public'
+)
+# Available: extract_values(), compute_mass_balance(), etc.
+# Unavailable: self_fitting(), modify_parameters()
+
+# Private instantiation (with authentication)
+twin_private = HydrologicalTwin(
+    config=config,
+    access_mode='private',
+    private_key=key
+)
+# Available: All operations including self_fitting()
+\end{verbatim}
+
+This unification eliminates code duplication while maintaining clear operational boundaries.
+
+% --------------------------------------------------------------
+
+\section{Summary}
+
+The \texttt{HydroTwin.py} \genversion\ series provides a pragmatic implementation of the \hydrot\ concept tailored for public visualization and analysis workflows in \cwv. By retaining conceptual foundations (monolithic façade, provenance tracking, composable API) while removing authentication requirements, it enables unrestricted access to hydrological modeling outputs without compromising the architectural principles that will govern the full \hydrot\ system.
+
+Key characteristics:
+
+\begin{itemize}
+    \item \textbf{Public accessibility}: No authentication barriers for visualization users
+    \item \textbf{Simplified provenance}: Basic \texttt{GitSynchroRecord} without cryptographic complexity
+    \item \textbf{Monolithic backend}: Unified API for \cwv integration
+    \item \textbf{Read-only operations}: Data extraction, aggregation, and analysis without parameter modification
+    \item \textbf{Native persistence}: Pickle-based serialization for caching and reuse
+\end{itemize}
+
+The \genversion\ series serves dual purposes: providing immediate value for \cwv users and establishing architectural patterns that inform full \hydrot\ development. It demonstrates that rigorous provenance tracking and reproducible workflows need not require heavy authentication infrastructure, making hydrological digital twins accessible to broader user communities while preserving pathways to authenticated, calibration-capable implementations for operational modeling contexts.
