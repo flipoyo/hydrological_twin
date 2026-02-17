@@ -299,7 +299,7 @@ calibrated_twin.provenance = {
     'algorithm': optimization_algorithm,
     'observation_datasets': [obs.fingerprint for obs in targets],
     'user': auth_manager.get_user_id(private_key),
-    'timestamp': datetime.utcnow().isoformat()
+    'timestamp': datetime.now(timezone.utc).isoformat()
 }
 \end{verbatim}
 
