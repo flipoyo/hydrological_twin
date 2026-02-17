@@ -249,7 +249,7 @@ The resulting SubTwin is fully traceable: its provenance explicitly documents th
 This use case addresses advanced analytical workflows that require full access to raw simulation outputs and the ability to execute new model runs. It supports:
 
 \begin{itemize}
-\item Parameter calibration and self-fitting
+\item Parameter calibration and \texttt{self\_fitting()}
 \item Uncertainty propagation and sensitivity analysis
 \item Bayesian inference and posterior sampling
 \item Hybrid physics-AI model development
@@ -289,18 +289,18 @@ The parameter calibration use case follows this sequence:
 \end{itemize}
 \end{enumerate}
 
-\subsection{The \texttt{.self-fitting()} Method}
+\subsection{The \texttt{.self\_fitting()} Method}
 
-The \texttt{.self-fitting()} method provides an integrated, automated calibration workflow within the \hydrot\ framework. This method encapsulates the complete calibration procedure as a native operation accessible only after successful instantiation with private-key authentication.
+The \texttt{.self\_fitting()} method provides an integrated, automated calibration workflow within the \hydrot\ framework. This method encapsulates the complete calibration procedure as a native operation accessible only after successful instantiation with private-key authentication.
 
 \subsubsection{Access Requirements and Preconditions}
 
-The \texttt{.self-fitting()} method requires:
+The \texttt{.self\_fitting()} method requires:
 
 \begin{enumerate}
 \item \textbf{Successful twin instantiation}: The method is only accessible after the \hydrot\ instance has been instantiated with full scientific integrity verification.
 
-\item \textbf{Private-key authentication}: As a parameter-modifying operation, \texttt{.self-fitting()} requires authenticated access with a valid private key.
+\item \textbf{Private-key authentication}: As a parameter-modifying operation, \texttt{.self\_fitting()} requires authenticated access with a valid private key.
 
 \item \textbf{Certified reproducibility}: The initial simulation state must be certified as reproducible, ensuring that all subsequent calibration iterations maintain traceability.
 
@@ -355,7 +355,7 @@ Key parameters include:
 
 \subsubsection{Self-Fitting Workflow}
 
-The \texttt{.self-fitting()} method executes the following automated procedure:
+The \texttt{.self\_fitting()} method executes the following automated procedure:
 
 \begin{enumerate}
 \item \textbf{Authentication and authorization}:
@@ -415,10 +415,10 @@ The \texttt{.self-fitting()} method executes the following automated procedure:
 
 \subsubsection{Registry Integration and Audit Trail}
 
-The \texttt{.self-fitting()} method maintains complete traceability through the universal Git registry:
+The \texttt{.self\_fitting()} method maintains complete traceability through the universal Git registry:
 
 \begin{itemize}
-\item \textbf{Calibration session record}: A unique identifier for the entire self-fitting operation, including:
+\item \textbf{Calibration session record}: A unique identifier for the entire \texttt{.self\_fitting()} operation, including:
 \begin{itemize}
     \item Initial twin fingerprint (starting configuration)
     \item Final twin fingerprint (calibrated configuration)
@@ -445,7 +445,7 @@ The \texttt{.self-fitting()} method maintains complete traceability through the 
 
 \subsubsection{Output and Return Values}
 
-The \texttt{.self-fitting()} method returns a \texttt{CalibrationResult} object containing:
+The \texttt{.self\_fitting()} method returns a \texttt{CalibrationResult} object containing:
 
 \begin{itemize}
 \item \textbf{calibrated\_twin}: A new \hydrot\ instance with optimized parameters
@@ -459,7 +459,7 @@ The \texttt{.self-fitting()} method returns a \texttt{CalibrationResult} object 
 
 \subsubsection{Integration with Estimation Layer}
 
-The \texttt{.self-fitting()} method is implemented as a high-level interface to the Estimation Layer, which provides:
+The \texttt{.self\_fitting()} method is implemented as a high-level interface to the Estimation Layer, which provides:
 
 \begin{itemize}
 \item \textbf{Observation extraction}: Methods to retrieve observation values at simulation grid locations
@@ -494,7 +494,7 @@ observations = [
 ]
 \end{verbatim}
 
-\item \textbf{Execute self-fitting}:
+\item \textbf{Execute \texttt{self\_fitting()}}:
 \begin{verbatim}
 result = twin.self_fitting(
     target_observations=observations,
@@ -522,7 +522,7 @@ print(f"Nash-Sutcliffe: {result.validation_metrics['nse']}")
 \end{verbatim}
 \end{enumerate}
 
-This workflow demonstrates how \texttt{.self-fitting()} encapsulates complex calibration logic into a single, reproducible method call, while maintaining full provenance tracking through the \hydrot\ architecture.
+This workflow demonstrates how \texttt{.self\_fitting()} encapsulates complex calibration logic into a single, reproducible method call, while maintaining full provenance tracking through the \hydrot\ architecture.
 
 \subsection{Uncertainty Quantification}
 
