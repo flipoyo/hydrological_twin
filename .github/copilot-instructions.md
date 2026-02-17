@@ -100,7 +100,7 @@ This is a **LaTeX documentation project** structured as follows:
 
 - **Prose**: Use "Hydrological Twin" (with space)
 - **Code references**: Use `HydrologicalTwin` (no space) or `\hydrot` LaTeX command
-- **Space-state**: Use "space-state" (single hyphen), NOT "space-time" or "space--state" (en-dash in prose)
+- **Space-state**: Use "space-state" (single hyphen), NOT "space-time" or "space--state" (the double hyphen renders as en-dash)
 - **Identity**: Use "GitSynchroRecord" (not "IdCard") for identity and traceability
 
 ### LaTeX Commands
@@ -175,7 +175,7 @@ This is a formal **White Book** following academic style:
 - Maintain formal academic style throughout
 - Preserve existing LaTeX structure and commands
 - Use existing shortcuts (`\hydrot`, `\cwv`, etc.) consistently
-- Follow hyphenation standards (space-state, not space--state in prose)
+- Follow hyphenation standards: use "space-state" with single hyphen, never "space--state" with double hyphen
 - Include citations and cross-references where appropriate
 - Use `\label{}` and `\ref{}` for internal references
 
