@@ -268,8 +268,14 @@ The following five primitives form a minimal yet expressive API foundation:
 \end{itemize}
 
 \subsection{Config problem in SteadyState : QGIS closes completely}. 
+    \begin{itemize}
     \item When configuring a project in steady-state mode, CaWaQS does not produce a HYD corresp file.txt. During initialization, when the plugin builds the HYD compartment mesh, it tries to read this file and calls sys.exit() if it's missing. In a QGIS plugin, sys.exit() doesn't just stop the plugin — it raises SystemExit which propagates through QGIS's C++ event loop and kills the entire application.The correspondence file maps GIS cell IDs to CaWaQS internal absolute IDs (ID ABS). It's only needed to index into HYD binary output files (HYD Q.*.bin, etc.). In steady state, since these outputs don't exist, the mapping is unnecessary — the mesh can be built using GIS IDs directly (same logic as all other compartments).
+ \end{itemize}
 
+ \subsection{PRINCIPLES OF THE HT CODING}. 
+    \begin{itemize}
+    \item FORMATS: Numpy for the I/O and heavy Cell slicing of the simlation matriw. Panda for the rendering 
+ \end{itemize}
 \subsection{Cleaning the backend after the connection with HT: Avoid repetition, combine shared function}.
   \begin{itemize}
     \item The Steady state reading functions (Manage)
@@ -277,6 +283,19 @@ The following five primitives form a minimal yet expressive API foundation:
     \item Is all the code of the readSim needede ( for al the case there is not the right year)
   \end{itemize}
 
+\subsection{Architecture of the SimvsObs}.
+\begin{verbatim}
+_prepare_sim_obs_data()  ←  pure NumPy (shared, L4 Analysis Layer)
+        │
+        ├── render_sim_obs_pdf()      ←  NumPy → DataFrame conversion (L5 Cartographic Layer)
+        │       │
+        │       └── Renderer.render_simobs_pdf()  ←  DataFrame in, unchanged
+        │
+        └── render_sim_obs_interactive()  ←  NumPy → DataFrame conversion (L5 Cartographic Layer)
+                │
+                └── Renderer.render_simobs_interactive()  ←  DataFrame in, unchanged
+
+\end{verbatim}
 \section{Development Timeline}
 
 \subsection{30 Jan: Temporal Operator}
