@@ -1,0 +1,36 @@
+\chapter*{Abstract}
+\phantomsection
+\addstarredchapter{Abstract}
+\fancyhead[LE]{\thepage} 
+\fancyhead[RE]{Abstract}
+\fancyhead[RO]{\thepage} 
+\fancyhead[LO]{Abstract}
+\fancyfoot[C]{\thepage}
+
+\renewcommand{\headrulewidth}{0.1pt}
+
+\setlength{\parindent}{0cm} % no indent
+\setlength{\parskip}{9pt}
+\vspace{-1cm}
+
+% -------------------------------------------------------------
+
+\hydrot\ establishes a new epistemic regime for hydrological modelling, replacing loosely coupled numerical experiments with synchronized, stateful, traceable, and reproducible physically-based estimation. This White Book presents a comprehensive digital infrastructure that transforms hydrological science from a practice of ad hoc simulation runs into a formally structured process of anchored estimation embedded within an explicit ontological space-state continuum.
+
+The framework is conceived as a persistent digital artefact composed of six functional layers: Model Layer (process-based physical models and spatial supports), Data Layer (observations, reanalyses, and private parameters), Estimation Layer (comparison, filtering, and Bayesian inference), Analysis Layer (temporal and spatial transformations), Cartographic Layer (visualization and spatial representation), and Git-Synchronized Registry (identity, provenance, and versioning). This layered architecture enforces that every simulation, dataset, parameterization, and software component is explicitly registered, versioned, and cryptographically fingerprinted through deterministic Git provenance.
+
+\hydrot\ is multi-dataset and multi-model by construction, natively supporting ensemble modelling, dataset intercomparison, hybrid physics-AI methodologies, and progressive spatial refinement. By isolating physical model parameterizations as the only potentially private component, the framework reconciles scientific openness with operational and economic constraints, providing a rigorous foundation for digital hydrology at the intersection of physics, data science, and distributed version control.
+
+The architecture implements a dual-access paradigm: public users access aggregated visualizations and statistical summaries through a rendering layer, while private-key holders unlock raw data access, parameter modification, simulation execution, and advanced calibration workflows. The Estimation Layer supports multi-stage workflows combining frequency-domain calibration, temporal optimization, hydrogeological reference fitting, and Bayesian inference with adaptive meshing. All estimation operations are immutable and append-only, generating new versioned states rather than modifying existing data.
+
+Identity and traceability are enforced through \texttt{GitSynchroRecord} objects that capture complete repository provenance---commit hash, branch, tag, dirty state, and remote URL---and compute reproducible version fingerprints. The Universal Git Registry maintains an immutable, hash-chained ledger of all validation events, calibration operations, and computational acts, ensuring structural commitment to audit and preventing silent drift or hidden inconsistencies.
+
+The framework has been operationalized as a monolithic backend serving the CaWaQS-ViZ QGIS plugin, demonstrating practical deployment of space-state ontology in production environments. The backend provides composable API primitives for data extraction, temporal aggregation, mass balance computation, spatial operations, and performance criteria evaluation, enabling hydrological analysts to conduct reproducible research with full provenance tracking.
+
+A simplified proto implementation (\hydrot\ Alpha series) provides public accessibility without authentication, offering visualization, exploration, and basic analysis capabilities through read-only operations and simplified provenance tracking. This dual-implementation strategy democratizes access to hydrological digital twins while preserving rigorous computational integrity for advanced scientific workflows.
+
+The White Book presents detailed specifications of the architectural decomposition, use cases organized by access control levels, technical API documentation, current development status including performance optimizations and design rationales, and comprehensive documentation of the proto implementation. Together, these components establish \hydrot\ as a foundational infrastructure for next-generation hydrological science: where every computational act becomes a reproducible, auditable, referenceable object within a coherent, evolutive, and cryptographically anchored digital twin.
+
+This transformation elevates hydrological modelling from sequences of isolated numerical experiments to a formally structured epistemology of synchronized physically-based estimation, providing a future-proof foundation for scientific research, operational forecasting, climate impact assessment, and integrated water resources management in an era demanding transparency, reproducibility, and computational accountability.
+
+\newpage
