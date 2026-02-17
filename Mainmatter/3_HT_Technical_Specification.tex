@@ -205,10 +205,10 @@ def self_fitting(
 \begin{itemize}
     \item \texttt{target\_observations}: List of observation sets with spatial locations, values, and uncertainties
     \item \texttt{parameters\_to\_calibrate}: Structured parameter specifications including priors and constraints
-    \item \texttt{optimization\_algorithm}: Selection of optimization method (\texttt{'gradient\_descent'}, \texttt{'mcmc'}, \texttt{'dream'}, \texttt{'enkf'}, \texttt{'pso'}, \texttt{'multi\_stage\_dream'})
+    \item \texttt{optimization\_algorithm}: Selection of optimization method (\texttt{'gradient\_descent'}, \texttt{'mcmc'}, \texttt{'bayesian\_inference'}, \texttt{'enkf'}, \texttt{'pso'}, \texttt{'multi\_stage\_bayesian'})
     \item \texttt{convergence\_criteria}: Dictionary with \texttt{max\_iterations}, \texttt{tolerance}, \texttt{objective\_function\_value}
     \item \texttt{private\_key}: Cryptographic key for authentication
-    \item \texttt{algorithm\_kwargs}: Algorithm-specific parameters (learning rate, ensemble size, DREAM chains, workflow stages, etc.)
+    \item \texttt{algorithm\_kwargs}: Algorithm-specific parameters (learning rate, ensemble size, Bayesian inference chains, workflow stages, etc.)
 \end{itemize}
 
 \textbf{Return Value:}
@@ -313,8 +313,8 @@ The \texttt{self\_fitting()} method delegates computational tasks to the Estimat
     \item \textbf{Gradient computation}: \texttt{EstimationLayer.compute\_gradients()} for adjoint methods
     \item \textbf{Likelihood evaluation}: \texttt{EstimationLayer.evaluate\_likelihood()} for Bayesian inference
     \item \textbf{Ensemble coordination}: \texttt{EstimationLayer.run\_ensemble()} for EnKF or Monte Carlo
-    \item \textbf{DREAM integration}: \texttt{EstimationLayer.run\_dream()} for multi-chain MCMC via Molonari.io
-    \item \textbf{HYMIT integration}: \texttt{EstimationLayer.run\_hymit()} for frequency-domain parameter identification
+    \item \textbf{Bayesian inference integration}: \texttt{EstimationLayer.run\_bayesian\_inference()} for multi-chain MCMC
+    \item \textbf{Frequency-domain calibration}: \texttt{EstimationLayer.run\_frequency\_calibration()} for frequency-domain parameter identification
 \end{itemize}
 
 \textbf{Multi-Stage Workflow Support:}
