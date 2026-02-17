@@ -260,15 +260,13 @@ This ensures that \cwv operates consistently across both transient and steady-st
 Ongoing and planned developments for the \hydrot\ - \cwv integration include:
 
 \begin{itemize}
-    \item \textbf{Advanced calibration integration}: Exposing the \texttt{.self\_fitting()} method through \cwv dialogs, enabling interactive parameter calibration with visual feedback.
-    
-    \item \textbf{Multi-model comparison}: Supporting simultaneous visualization of outputs from multiple model configurations or different modeling platforms.
-    
-    \item \textbf{Real-time data integration}: Connecting \hydrot\ to operational data streams for near-real-time model-observation comparison.
-    
-    \item \textbf{Web-based frontend}: Developing a web interface parallel to the QGIS plugin, leveraging the QGIS-independent \hydrot\ backend.
-    
-    \item \textbf{Enhanced provenance tracking}: Implementing cryptographic logging of all user actions for full audit compliance in operational contexts.
+    \item connection to an existing \hydrot\ for \texttt{public} access from a QGIS client
+
+    \item building of a proto hydroTwin Python package for the first git repo of HydroTwin
+
+    \item deployment on a server 
+
+    \item self-integrity-check, which inform the HydroTwin \texttt{status} = dirty if self-integrity = NO. Multiple steps : about data, gitSync, first ; and then forward simulation for comparison of 2 hypercubes
 \end{itemize}
 
 For detailed information about \cwv capabilities and usage, refer to the \cwv user guide (\url{https://gitlab.com/cawaqs/gviz/cawaqsviz}).
