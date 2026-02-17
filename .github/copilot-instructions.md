@@ -100,7 +100,7 @@ This is a **LaTeX documentation project** structured as follows:
 
 - **Prose**: Use "Hydrological Twin" (with space)
 - **Code references**: Use `HydrologicalTwin` (no space) or `\hydrot` LaTeX command
-- **Space-state**: Use "space-state" (single hyphen), NOT "space-time" or "space--state" (the double hyphen renders as en-dash)
+- **Space-state**: Use "space-state" (single hyphen), NOT "space-time" or "space--state" (double hyphen, which renders as en-dash in LaTeX)
 - **Identity**: Use "GitSynchroRecord" (not "IdCard") for identity and traceability
 
 ### LaTeX Commands
