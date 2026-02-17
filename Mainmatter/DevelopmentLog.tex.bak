@@ -322,7 +322,7 @@ Early design iterations included high-level API methods for specific analyses (\
 
 \begin{itemize}
     \item Each new analysis type required a new API method
-    \item Similar operations (\eg monthly mean vs.\ annual mean) were implemented redundantly
+    \item Similar operations (e.g., monthly mean vs.\ annual mean) were implemented redundantly
     \item Frontend code could not easily adapt or extend analyses without backend modifications
 \end{itemize}
 
@@ -339,198 +339,318 @@ regime = hydro_twin.apply_temporal_operator(
 
 This design reflects the architectural philosophy that backend infrastructure should provide data transformation capabilities, not complete analysis workflows.
 
-\subsection{Vec\_Operator: Pure Computational Layer}
+\subsection{Definition of a New Architecture 1: Vec operator (3 of Feb)}
 
-The \texttt{Vec\_Operator} component encapsulates all vectorized computational operations, deliberately isolated from I/O and GIS dependencies. This separation enables:
-
-\begin{itemize}
-    \item Independent testing with synthetic NumPy arrays
-    \item Reusability across different frontend platforms
-    \item Performance optimization without affecting I/O logic
-    \item Clear contracts for input/output data shapes
-\end{itemize}
-
-The \texttt{Vec\_Operator} structure comprises two main subcomponents:
-
-\paragraph{Operator Subcomponent}
-Temporal and spatial transformation functions:
-\begin{itemize}
-    \item \texttt{t\_transform()}: Temporal aggregation (mean, sum, min, max) with flexible grouping (\eg by month, by year, by hydrological season)
-    \item \texttt{sp\_operator()}: Spatial reduction operations (weighted average, spatial sum, catchment-level aggregation)
-\end{itemize}
-
-\paragraph{Extractor Subcomponent}
-Spatial and temporal slicing operations:
-\begin{itemize}
-    \item \texttt{extract\_spatial()}: Subset selection based on cell ID lists or spatial masks
-    \item \texttt{extract\_temporal()}: Temporal window extraction with date alignment
-    \item \texttt{\_get\_cell\_ids\_from\_operator()}: Mapping between spatial operators (\eg "aquifer\_outcropping") and cell ID sets
-\end{itemize}
-
-All \texttt{Vec\_Operator} functions accept and return NumPy arrays, ensuring composability and avoiding implicit type conversions.
-
-\subsection{Renderer: Cartographic and Visualization Layer}
-
-The \texttt{Renderer} component handles all visualization and export operations. It operates at the boundary between the backend (NumPy-based) and user-facing outputs (plots, maps, tables).
-
-Key design features:
-
-\begin{itemize}
-    \item \textbf{Format conversion boundary}: All NumPy-to-DataFrame conversions occur within \texttt{Renderer} methods, preserving the NumPy-based computational pipeline.
-    
-    \item \textbf{Separation of rendering modes}:
-    \begin{itemize}
-        \item \texttt{render\_interactive()}: Plotly-based interactive visualizations for GUI dialogs
-        \item \texttt{render\_static()}: Matplotlib-based static exports (PNG, PDF)
-        \item \texttt{render\_spatial()}: QGIS vector layer generation for spatial maps
-    \end{itemize}
-    
-    \item \textbf{Provenance embedding}: All rendered outputs include metadata annotations (model version, data fingerprint, rendering parameters) as embedded text or auxiliary metadata files.
-\end{itemize}
-
-The \texttt{Renderer} architecture ensures that rendering logic remains decoupled from analysis logic, enabling alternative visualization backends (\eg web-based plotters) without affecting core computational components.
-
-% --------------------------------------------------------------
-
-\section{Technical Implementation Details}
-
-\subsection{Binary File I/O and Data Structures}
-
-\cw outputs are stored as binary files with model-specific formats. The \hydrot\ backend provides standardized reading functions that:
-
-\begin{itemize}
-    \item Parse binary headers to extract metadata (dimensions, time steps, variables)
-    \item Read data blocks as contiguous NumPy arrays using vectorized operations
-    \item Handle endianness and data type conversions
-    \item Cache results to avoid redundant disk access
-\end{itemize}
-
-\paragraph{Temporal Indexing}
-All temporal data are indexed using NumPy's \texttt{datetime64} type, ensuring:
-\begin{itemize}
-    \item Unambiguous date representation (no string parsing ambiguities)
-    \item Efficient temporal alignment between simulation and observation
-    \item Native support for calendar operations (month extraction, year grouping)
-\end{itemize}
-
-\paragraph{Spatial Indexing}
-Spatial data are indexed by:
-\begin{itemize}
-    \item \textbf{Cell IDs}: Integer identifiers mapping to GIS features
-    \item \textbf{Compartment membership}: Hierarchical organization (FP, HYD, NSAT, AQ layers)
-    \item \textbf{Spatial operators}: Named spatial subsets (\eg "catchment\_X", "aquifer\_layer\_1")
-\end{itemize}
-
-This indexing scheme enables efficient spatial queries and subset extraction without loading entire spatiotemporal hypercubes.
-
-\subsection{Observation Data Integration}
-
-Observation data (\eg piezometric heads, discharge measurements) are stored in text files with standardized formats. The backend provides:
-
-\begin{itemize}
-    \item Automatic temporal alignment with simulation periods
-    \item Gap detection and handling (NaN insertion for missing observations)
-    \item Uncertainty propagation (when observational error estimates are available)
-    \item Spatial association with model compartments and grid cells
-\end{itemize}
-
-Observations are exposed through the same API as simulations, enabling transparent comparison:
+The new architecture aims to be modular and simpler, building upon the restructuring performed for the \hydrot.  
+It exposes an API (HydrologicalTwin) whose functions are based on the \texttt{Vec\_Operator}.
 
 \begin{verbatim}
-sim = hydro_twin.extract_values('HYD', 'discharge', dates)
-obs = hydro_twin.read_observations('discharge', 'station_X')
+HydrologicalTwin (API)
+|-- extract_values()            -> Manage.Temporal.readSimData()  [I/O]
+|-- extract_area_values()       -> Extractor.extract.spatial + cell ID mapping
+|-- apply_temporal_operator()   -> Operator.t_transform()         [NumPy]
+|-- apply_spatial_average()     -> Operator.sp_operator()         [NumPy]
+
+
+Vec_Operator (Pure NumPy)
+|-- Operator
+|   |-- t_transform()
+|   `-- sp_operator()
+|-- Extractor
+|   |-- extract_spatial()
+|   |-- extract_temporal()
+|   `-- _get_cell_ids_from_operator()
+
+Manage (I/O & GIS ONLY)
+|-- Temporal
+|   |-- readSimData()
+|   `-- readObsData()
+`-- Spatial
+    |-- getCatchmentCellsIds()
+    `-- buildAqOutcropping()
 \end{verbatim}
 
-\subsection{Configuration and Project Structure}
 
-Each \cwv project is defined by a configuration structure comprising:
+The frontend was not fully connected at this stage, as a clearer understanding of frontend requirements was still needed.
 
-\begin{itemize}
-    \item \textbf{ConfigSimulation}: Temporal extent, time step, compartments activated
-    \item \textbf{ConfigGeometry}: Spatial extents, coordinate systems, mesh definitions
-    \item \textbf{ConfigProject}: Analysis-specific settings (\eg hydrological regime definition, visualization preferences)
-    \item \textbf{Directory paths}: Locations of \cw outputs, observation files, temporary storage
-\end{itemize}
+\subsection{Definition of a New Architecture 2: creation of Render}
 
-The \hydrot\ constructor validates configuration consistency and aborts instantiation if critical components are missing or inconsistent. This fail-fast approach prevents silent errors during analysis.
+Architecture defined to answer the following request of the current CaWaQS Viz as defined in the following section of this chapter
+\begin{verbatim}
+HydrologicalTwin (API)
+|-- extract_values()            -> Manage.Temporal.readSimData()  [I/O]
+|-- extract_area_values()       -> Extractor.extract.spatial + cell ID mapping
+|-- apply_temporal_operator()   -> Operator.t_transform()         [NumPy]
+|-- apply_spatial_average()     -> Operator.sp_operator()         [NumPy]
 
-% --------------------------------------------------------------
 
-\section{Known Limitations and Development Roadmap}
+Vec_Operator (Pure NumPy)
+|-- Operator
+|   |-- t_transform()
+|   `-- sp_operator()
+|-- Extractor
+|   |-- extract_spatial()
+|   |-- extract_temporal()
+|   `-- _get_cell_ids_from_operator()
 
-\subsection{Current Limitations}
+Manage (I/O & GIS ONLY)
+|-- Temporal
+|   |-- readSimData()
+|   `-- readObsData()
+`-- Spatial
+    |-- getCatchmentCellsIds()
+    `-- buildAqOutcropping()
 
-\paragraph{Steady-State Model Edge Cases}
-While basic steady-state support has been implemented, certain scenarios require further development:
-\begin{itemize}
-    \item Correspondence file absence requires special handling during mesh construction
-    \item Some dialogs assume transient data and must be conditionally disabled
-    \item Temporal operators (\eg hydrological regime) require explicit warnings for steady-state contexts
-\end{itemize}
+Rederer(Plotting and renderization)
+|-- Temporal
+|   |-- readSimData()
 
-\paragraph{Legacy Code Integration}
-The \texttt{Manage} component retains legacy functionality predating the \hydrot\ architecture. Ongoing refactoring targets:
-\begin{itemize}
-    \item Elimination of redundant functions with overlapping purposes
-    \item Standardization of return types and error handling
-    \item Consolidation of steady-state and transient reading functions
-\end{itemize}
 
-\paragraph{Performance Bottlenecks}
-While most operations achieve interactive performance, certain operations remain slow:
-\begin{itemize}
-    \item \texttt{convertWatbalMatrix()}: Nested loops convert water balance matrices to GeoDataFrames. Vectorization is planned.
-    \item Spatial map rendering: Repeated GeoDataFrame-to-QGIS-layer conversions for animated maps. Batch rendering optimization is underway.
-    \item Large-domain simulations: Models with $>10^6$ cells and $>10^4$ time steps strain memory limits. Chunk-based processing is being evaluated.
-\end{itemize}
+\end{verbatim}
 
-\subsection{Short-Term Development Objectives}
 
-\begin{itemize}
-    \item Complete vectorization of remaining nested loops in spatial operations
-    \item Implement chunk-based processing for memory-constrained large-domain scenarios
-    \item Extend unit test coverage to $>80\%$ for core \hydrot\ API methods
-    \item Comprehensive API documentation with type hints and docstring examples
-\end{itemize}
+The frontend was not fully connected at this stage, as a clearer understanding of frontend requirements was still needed.
+\subsection{Making the Backend Independent from QGIS}
 
-\subsection{Medium-Term Development Objectives}
+Some backend methods still depended on QGIS.  
+To enable a fully independent hydrological twin, these dependencies were removed and replaced with pure Python and GeoPandas implementations.
 
 \begin{itemize}
-    \item Expose \texttt{.self\_fitting()} calibration capabilities through \cwv dialogs
-    \item Develop web-based frontend as alternative to QGIS plugin
-    \item Support multi-model comparison and ensemble visualization
-    \item Integrate real-time data streams for operational modeling contexts
+    \item Created \texttt{interface/GeoDataProvider.py}
+    \item Modified \texttt{interface/ExploreData.py}
+    \item Modified \texttt{backend/Compartment.py}
+    \item Modified \texttt{backend/Mesh.py}
+    \item Modified \texttt{backend/Extraction.py}
+    \item Modified \texttt{backend/Observations.py}
+    \item Created \texttt{backend/tools/spatial\_utils.py}
 \end{itemize}
 
-\subsection{Long-Term Vision}
+Two new files were introduced:
+\begin{itemize}
+    \item \texttt{GeoDataProvider}: fetches geodata from either QGIS layers or shapefiles.
+    \item \texttt{spatial\_utils}: replacement for \texttt{GisLayerManager}, providing shared spatial utilities.
+\end{itemize}
 
-The ultimate objective for \hydrot\ - \cwv integration is establishing a fully reproducible, audit-ready platform where:
+Frontend systems handling backend data (e.g.\ \texttt{DialogSpatialMaps}) were updated accordingly.
+
+\subsection{Spatial Maps Optimization Status}
+
+Completed:
+\begin{itemize}
+    \item Vectorized \texttt{convertGdfToVectorLayer} (batch feature insertion).
+    \item Removed triple-nested \texttt{.loc} loops in spatial dialogs.
+\end{itemize}
+
+Still to do:
+\begin{itemize}
+    \item Vectorize \texttt{convertWatbalMatrix} in \texttt{Manage.py}.
+    \item Remove duplicate file reads in \texttt{drawPemap}.
+\end{itemize}
+
+\subsection{API Wiring Tracker}
+
+\begin{verbatim}
+FRONTEND (Dialogs)        -> HydrologicalTwin -> BACKEND
+
+[OK] ROUTED THROUGH HT API
+- DialogComparesimobs      extract_values()  [x2]
+- DialogSpatialmaps        extract_values()  [x3]
+- DialogBudgetbarplot      extract_values()  [x1]
+- DialogStatCriteria       extract_values()  [x1]
+- DialogQrCalculation      extract_values()  [x3]
+
+TOTAL: 10 calls
+
+[WARN] THROUGH HT BUT REACHING MANAGE INTERNALS
+- temporal.simMatrixToDf()
+- temporal.aggregate_matrix()
+- temporal.convertWatbalMatrix()
+- temporal.readObsData()
+- spatial.buildAqOutcropping()
+- budget.calcInterannualBudget()
+
+[FAIL] BYPASSING HT COMPLETELY
+- DialogQrCalculation -> manage.Temporal.readObsData()
+- DialogQrCalculation -> manage.Spatial.getCatchmentCellsIds()
+- DialogQrCalculation -> manage.Budget.calcRunoffRatio()
+\end{verbatim}
+
+
+\begin{verbatim}
+HydrologicalTwin API methods
+===========================
+
+API 1   extract_values()          -> ExtractValuesResponse(.data, .dates, .meta)
+API 1b  extract_area_values()     -> ExtractValuesResponse (cell subset or spatial operator)
+API 2   apply_temporal_operator() -> TemporalOpResponse(.data, .date_labels, .meta)
+API 3   compute_mass_balance()    -> MassBalanceResponse
+API 4   apply_spatial_average()   -> SpatialAverageResponse
+API 5   compare_sim_obs()         -> ComparisonResponse
+API 6   compute_regime()          -> RegimeResponse
+        get_compartment()         -> Compartment (pure lookup)
+
+
+INTERNAL CALL                  -> EXISTING HT API REPLACEMENT
+-------------------------------------------------------------
+.temporal.simMatrixToDf()       -> (none - extract_values already gives dates/slicing)
+.temporal.aggregate_matrix()    -> API 2: apply_temporal_operator()
+.temporal.convertWatbalMatrix() -> (none)
+.temporal.readObsData()         -> (none)
+.temporal.readSimSteady()       -> (none)
+.temporal.readObsSteady()       -> (none)
+.temporal.interactifplotSimObs()-> (none - plotting, not data)
+.temporal.plotPDF()             -> (none - plotting, not data)
+.temporal.checkTempFile()       -> (none - internal cache check)
+.spatial.buildAqOutcropping()   -> API 1b: extract_area_values(spatial_operator='aquifer_outcropping')
+.budget.calcInteranualBVariable()-> API 3: compute_mass_balance()
+.budget.plotInteranualBVariable()-> (none - plotting)
+.budget.calcSimRunoffRatio()    -> (none)
+.budget.calcObsRunoffRatio()    -> (none)
+.spatial.getCatchmentCellsIds() -> API 1b: extract_area_values(spatial_operator='catchment_cells')
+
+\end{verbatim}
+
+REMOVED THE COMPARATOR since it can be done in the frontend: according to the principle of 
+\paragraph{Key architectural message}
+\emph{``Let’s think well together. I want these APIs to be shared functions of my dialog boxes. The goal is to have fewer APIs that can be composed together, allowing strong operations with simpler and cleaner code.}
+
+\emph{For instance, if we consider the hydrological regime, copying all the logic into functions tied to the \texttt{Vec\_Operator} and then connecting them to the API would make the system less adaptable to other operations.}
+
+\emph{If I fragment the APIs into too many very small tasks, does it make the concept of an API useless? And looking at the dialog boxes, which APIs should be designed to answer their shared questions?''}
+
+\paragraph{Proposed architectural response}
+To preserve composability, adaptability, and reuse across dialog boxes, the API layer should expose a small set of \textbf{orthogonal and composable primitives}. High-level analyses (e.g.\ regime computation or model--observation comparison) should be built by composing these primitives, rather than being implemented as standalone APIs.
+
+\paragraph{Proposed composable primitives}
+The following five primitives form a minimal yet expressive API foundation:
 
 \begin{itemize}
-    \item Every visualization is linked to a unique \texttt{GitSynchroRecord} fingerprint
-    \item All user actions (data extraction, parameter modification, simulation execution) are cryptographically logged
-    \item Public and private access modes enable both open science and operational confidentiality
-    \item The platform operates identically across desktop, web, and command-line environments
+  \item \texttt{extract\_values}  
+  \begin{itemize}
+    \item Extracts raw simulation values together with their associated dates.
+    \item No spatial or temporal aggregation applied.
+  \end{itemize}
+
+  \item \texttt{extract\_area\_values}  
+  \begin{itemize}
+    \item Extracts values over a spatial subset (e.g.\ basin, mask, polygon).
+    \item Reusable for any spatially dependent operation.
+  \end{itemize}
+
+  \item \texttt{apply\_temporal\_operator}  
+  \begin{itemize}
+    \item Applies temporal aggregation or transformation (mean, sum, regime, rolling statistics, etc.).
+    \item Decouples temporal logic from data extraction.
+  \end{itemize}
+
+  \item \texttt{read\_observations}  
+  \begin{itemize}
+    \item Reads observational data (e.g.\ \texttt{.dat} files).
+    \item Provides a unified interface between simulated and observed datasets.
+  \end{itemize}
+
+  \item \texttt{apply\_spatial\_average}  
+  \begin{itemize}
+    \item Performs spatial averaging or reduction.
+    \item Can be combined with any extraction or temporal operator.
+  \end{itemize}
 \end{itemize}
 
-This vision aligns with the broader \hydrot\ philosophy: establishing a new epistemic regime for hydrological modeling where version control, traceability, and reproducibility are foundational principles rather than optional enhancements.
+\subsection{Config problem in SteadyState : QGIS closes completely}. 
+    \begin{itemize}
+    \item When configuring a project in steady-state mode, CaWaQS does not produce a HYD corresp file.txt. During initialization, when the plugin builds the HYD compartment mesh, it tries to read this file and calls sys.exit() if it's missing. In a QGIS plugin, sys.exit() doesn't just stop the plugin — it raises SystemExit which propagates through QGIS's C++ event loop and kills the entire application.The correspondence file maps GIS cell IDs to CaWaQS internal absolute IDs (ID ABS). It's only needed to index into HYD binary output files (HYD Q.*.bin, etc.). In steady state, since these outputs don't exist, the mapping is unnecessary — the mesh can be built using GIS IDs directly (same logic as all other compartments).
+ \end{itemize}
 
-% --------------------------------------------------------------
+ \subsection{PRINCIPLES OF THE HT CODING}. 
+    \begin{itemize}
+    \item FORMATS: Numpy for the I/O and heavy Cell slicing of the simlation matriw. Panda for the rendering 
+ \end{itemize}
+\subsection{Cleaning the backend after the connection with HT: Avoid repetition, combine shared function}.
+  \begin{itemize}
+    \item The Steady state reading functions (Manage)
+    \item The whole architecture couls be cleearer: Like Observation, extraction mesh and compartment could all be in the same folder defining the space 
+    \item Is all the code of the readSim needede ( for al the case there is not the right year)
+  \end{itemize}
 
-\section{Summary}
+\subsection{Architecture of the SimvsObs}.
+\begin{verbatim}
+_prepare_sim_obs_data()  ←  pure NumPy (shared, L4 Analysis Layer)
+        │
+        ├── render_sim_obs_pdf()      ←  NumPy → DataFrame conversion (L5 Cartographic Layer)
+        │       │
+        │       └── Renderer.render_simobs_pdf()  ←  DataFrame in, unchanged
+        │
+        └── render_sim_obs_interactive()  ←  NumPy → DataFrame conversion (L5 Cartographic Layer)
+                │
+                └── Renderer.render_simobs_interactive()  ←  DataFrame in, unchanged
 
-This chapter has documented the current state of \hydrot\ as the backend infrastructure for \cwv. The integration demonstrates how theoretical architectural principles (\ie space-state ontology, \texttt{GitSynchroRecord} provenance, composable APIs) are operationalized in production environments.
+\end{verbatim}
+\section{Development Timeline}
 
-Key achievements include:
+\subsection{30 Jan: Temporal Operator}
 
 \begin{itemize}
-    \item Monolithic backend refactoring providing unified data access across all \cwv dialogs
-    \item Performance optimizations enabling interactive analysis of large spatiotemporal datasets
-    \item QGIS-independent architecture supporting standalone, web, and command-line frontends
-    \item Composable API design maximizing flexibility, reusability, and transparency
-    \item Comprehensive spatial abstraction enabling seamless transitions between visualization platforms
+    \item Created \texttt{Operator} class with temporal and spatial transforms.
+    \item Implemented \texttt{t\_transform}, operating on \texttt{datetime64} dates.
+    \item To do: verify integration of \texttt{apply\_temporal\_operator} in \hydrot.
 \end{itemize}
 
-Ongoing challenges include legacy code integration, memory optimization for large domains, and extension to calibration and uncertainty quantification workflows.
+\subsection{03 Feb: Vec\_Operator}
 
-The \hydrot\ - \cwv integration serves as a reference implementation demonstrating that rigorous scientific reproducibility can coexist with practical usability requirements in operational hydrological modeling platforms. For detailed usage information and tutorials, consult the \cwv user guide at \url{https://gitlab.com/cawaqs/gviz/cawaqsviz}.
+\begin{itemize}
+    \item Finalized Vec\_Operator structure (Operate, Extract, Compare).
+    \item Created new API endpoints.
+    \item To do: remove redundancies with \texttt{Manage}, connect to GUI, remove GeoPandas dependency.
+\end{itemize}
+
+\subsection{05 Feb: Backend Independence}
+
+\begin{itemize}
+    \item Continued removal of QGIS dependencies in the backend.
+    \item To do: complete frontend migration away from QGIS vector layers.
+\end{itemize}
+
+\subsection{06 Feb: Frontend Integration and Bug Fixes}
+
+\begin{itemize}
+    \item Connected and tested frontend with updated backend.
+    \item To do: fully route calls through the hydrological twin.
+\end{itemize}
+
+\subsection{09 Feb: Spatial Maps Optimization}
+\begin{itemize}
+    \item Fixed remaining spatial map performance issues.
+    \item Wired \texttt{extract\_values} to all dialogs.
+    \item Removed the comparator class: it will be handled in the front end
+    \item TO DO: finish the restructuring of the API to understand the needed one and start connecting the ones are ready
+\end{itemize}
+
+\subsection{10 Feb: HT Retoring and restructuring}
+\begin{itemize}
+    \item Redefined the APIs accrrding their layers of appartenance 
+    \item Separated compartment and observation and wired to the hydrological twin
+    \item Redefined the structure as API sending to (Vec operator for computations, Manage for I/O, Rendering for the plotting)
+    \item TO DO: 
+\end{itemize}
+
+\subsection{16 Feb: HT Retoring and restructuring}
+\begin{itemize}
+    \item Config problem in SteadyState : QGIS closes completely. 
+\end{itemize}
+
+\subsection{17 Feb: Compare Sim obs }
+\begin{itemize}
+    \item Refactoring of the back end, clean the frontend, fixed few bugs
+\end{itemize}
+
+\section{Main Potential Issues}
+
+\subsection{Common Outputs for All Models} \label{ch:model-output}
+
+All models within the \hydrot ecosystem must share a common output data format.  
+This is required to ensure:
+\begin{itemize}
+    \item compatibility across models,
+    \item reduced memory usage,
+    \item simpler downstream analysis.
+\end{itemize}
