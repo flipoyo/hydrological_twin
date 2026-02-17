@@ -205,7 +205,7 @@ def self_fitting(
 \begin{itemize}
     \item \texttt{target\_observations}: List of observation sets with spatial locations, values, and uncertainties
     \item \texttt{parameters\_to\_calibrate}: Structured parameter specifications including priors and constraints
-    \item \texttt{optimization\_algorithm}: Selection of optimization method (\texttt{'gradient\_descent'}, \texttt{'mcmc'}, \texttt{'bayesian\_inference'}, \texttt{'enkf'}, \texttt{'pso'}, \texttt{'multi\_stage\_bayesian'})
+    \item \texttt{optimization\_algorithm}: Selection of optimization method (\texttt{'gradient\_descent'}, \texttt{'mcmc'}, \texttt{'temporal\_bayesian\_inference'}, \texttt{'enkf'}, \texttt{'pso'}, \texttt{'multi\_stage\_bayesian'})
     \item \texttt{convergence\_criteria}: Dictionary with \texttt{max\_iterations}, \texttt{tolerance}, \texttt{objective\_function\_value}
     \item \texttt{private\_key}: Cryptographic key for authentication
     \item \texttt{algorithm\_kwargs}: Algorithm-specific parameters (learning rate, ensemble size, Bayesian inference chains, workflow stages, etc.)
