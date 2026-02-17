@@ -205,10 +205,10 @@ def self_fitting(
 \begin{itemize}
     \item \texttt{target\_observations}: List of observation sets with spatial locations, values, and uncertainties
     \item \texttt{parameters\_to\_calibrate}: Structured parameter specifications including priors and constraints
-    \item \texttt{optimization\_algorithm}: Selection of optimization method (\texttt{'gradient\_descent'}, \texttt{'mcmc'}, \texttt{'enkf'}, \texttt{'pso'})
+    \item \texttt{optimization\_algorithm}: Selection of optimization method (\texttt{'gradient\_descent'}, \texttt{'mcmc'}, \texttt{'dream'}, \texttt{'enkf'}, \texttt{'pso'}, \texttt{'multi\_stage\_dream'})
     \item \texttt{convergence\_criteria}: Dictionary with \texttt{max\_iterations}, \texttt{tolerance}, \texttt{objective\_function\_value}
     \item \texttt{private\_key}: Cryptographic key for authentication
-    \item \texttt{algorithm\_kwargs}: Algorithm-specific parameters (learning rate, ensemble size, etc.)
+    \item \texttt{algorithm\_kwargs}: Algorithm-specific parameters (learning rate, ensemble size, DREAM chains, workflow stages, etc.)
 \end{itemize}
 
 \textbf{Return Value:}
@@ -313,7 +313,53 @@ The \texttt{self\_fitting()} method delegates computational tasks to the Estimat
     \item \textbf{Gradient computation}: \texttt{EstimationLayer.compute\_gradients()} for adjoint methods
     \item \textbf{Likelihood evaluation}: \texttt{EstimationLayer.evaluate\_likelihood()} for Bayesian inference
     \item \textbf{Ensemble coordination}: \texttt{EstimationLayer.run\_ensemble()} for EnKF or Monte Carlo
+    \item \textbf{DREAM integration}: \texttt{EstimationLayer.run\_dream()} for multi-chain MCMC via Molonari.io
+    \item \textbf{HYMIT integration}: \texttt{EstimationLayer.run\_hymit()} for frequency-domain parameter identification
 \end{itemize}
+
+\textbf{Multi-Stage Workflow Support:}
+
+For complex calibration scenarios requiring integration across multiple physical processes and observation types, the method supports multi-stage workflows:
+
+\begin{verbatim}
+# Multi-stage configuration example
+workflow_config = {
+    'stages': [
+        {
+            'name': 'frequency_domain',
+            'algorithm': 'hymit',
+            'observations': ['discharge', 'recharge'],
+            'parameters': ['HRU_efficiency', 'rainfall_response']
+        },
+        {
+            'name': 'temporal_recharge',
+            'algorithm': 'dream_surface',
+            'observations': ['recharge_time_series'],
+            'parameters': ['infiltration_params']
+        },
+        {
+            'name': 'hydrogeological_reference',
+            'algorithm': 'hymit_piezometric',
+            'observations': ['piezometric_heads'],
+            'parameters': ['transmissivity', 'storativity']
+        },
+        {
+            'name': 'bayesian_inversion',
+            'algorithm': 'dream',
+            'observations': ['all'],
+            'parameters': ['conductivity_field', 'storage_field'],
+            'adaptive_mesh': True
+        }
+    ]
+}
+
+result = twin.self_fitting(
+    workflow_stages=workflow_config,
+    private_key=key
+)
+\end{verbatim}
+
+Each stage produces intermediate calibrated twins that are registered with provenance linkage, enabling full traceability from initial frequency-domain analysis through final Bayesian parameter posteriors.
 
 \textbf{Error Handling:}
 
