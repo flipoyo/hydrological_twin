@@ -546,10 +546,10 @@ result = twin.self_fitting(
     },
     optimization_algorithm='multi_stage_bayesian',
     workflow_stages=[
-        {'name': 'frequency_calibration', 'domain': 'frequency'},
+        {'name': 'frequency_domain_calibration', 'domain': 'frequency'},
         {'name': 'temporal_recharge', 'domain': 'temporal'},
         {'name': 'hydrogeological_reference', 'domain': 'frequency'},
-        {'name': 'bayesian_inference', 'domain': 'temporal'}
+        {'name': 'temporal_bayesian_inference', 'domain': 'temporal'}
     ],
     adaptive_meshing=True,
     convergence_criteria={
