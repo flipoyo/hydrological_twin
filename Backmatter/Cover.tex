@@ -1,59 +1,49 @@
 % --- Première de couverture ---
 \begin{titlepage}
-    \vspace*{2cm}
+    \vspace*{-2cm}
     \begin{center}
 \rule{17.5cm}{0.035cm}\\
 \vspace{1cm}
-\includegraphics[height=3.1cm]{Figures/Logos_Geosciences.png} \\
+\includegraphics[height=2cm]{Figures/Logos_Geosciences.png}
+\hfill
+\includegraphics[height=2cm]{Figures/logo-ites-1.png}
+\hfill
+\includegraphics[height=2cm]{Figures/antea-group-wordmark.png}\\
 \vspace{0.75cm}
 
         % Titre
         {\Huge \textbf{ Hydrological Twin}\par}
+        \vspace{0.20cm}
+            {\huge\textbf{suite \genversion}} \\
         \vspace{0.35cm}
+            
     \includegraphics[height=7cm]{Figures/LogoHT.png}\\
-    {\Large\textbf{suite \genversion}} \\
-    \vspace{1.cm}
+     \vspace{0.35cm}
+            \today \\
+        \vspace{1.cm}
+  {\large \listAuthorNames}
 
+         \vspace{0.50cm}
         % Tampon France2030
         \begin{flushleft}
-            \vfill
-            \includegraphics[height=1.5cm]{Figures/Logotype-rouge-bleu.png}
+           % \vfill
+            \includegraphics[height=1cm]{Figures/Logotype-rouge-bleu.png}
+            %\hfill 
+            {\large Projet Innov'Eau - EAU SPRA 2}
             \vspace{0.5cm}
-            
+            \hline
             % Liste des auteurs (noms uniquement)
-            {\large \listAuthorNames}
+            
         \end{flushleft}
-    \end{center}
-\end{titlepage}
+        
 
-% --- Seconde de couverture (affiliations) ---
-\newpage
-\begin{titlepage}
-    \vspace*{2cm}
-    \begin{center}
+    \newpage
+    % --- Seconde de couverture (affiliations) ---
+
+    
         {\Large \textbf{Affiliations}\par}
-        \vspace{1cm}
-
-        % Affiliations
-        \begin{flushleft}
-            \listAffiliations
-        \end{flushleft}
-
-        % Affiliations par auteur
-        \vspace{1cm}
-        {\Large \textbf{Affiliations par auteur :}\par}
         \vspace{0.5cm}
-        \begin{flushleft}
-            \listAllAuthorsWithAffiliations
-        \end{flushleft}
-
-        % Date sous la suite alpha
-        \vfill
-        \begin{center}
-            \Large
-            Suite alpha.x\\
-            \today
-        \end{center}
+       %  \listAuthorAffiliations % Bugged
     \end{center}
 \end{titlepage}
 
