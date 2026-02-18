@@ -243,8 +243,10 @@
     \stepcounter{nid}%
     \ifnum\value{nid}=1
         \xdef\authorslist{\textbf{Auth\roman{nid} : #1, #2}}%
+        \xdef\authorslistnames{#2 #1}%
     \else
         \xdef\authorslist{\authorslist, \textbf{Auth\roman{nid} : #1, #2}}%
+        \xdef\authorslistnames{\authorslistnames, #2 #1}%
     \fi
 }
 
@@ -255,12 +257,24 @@
 }
 
 % --- Macro pour associer un auteur à une ou plusieurs affiliations ---
-\newcommand{\setaffiliations}[2]{%
-    \expandafter\xdef\csname auth\roman{nid}affils\endcsname{#2}%
+% Usage: \setaffiliations{1,2,3} after \addauthor
+\newcommand{\setaffiliations}[1]{%
+    \expandafter\xdef\csname auth\roman{nid}affils\endcsname{#1}%
 }
 
-% --- Macro pour lister les auteurs ---
+% --- Macro pour lister les auteurs (format avec labels Auth<i>) ---
 \newcommand{\listAuthors}{\authorslist}
+
+% --- Macro pour lister uniquement les noms des auteurs (sans labels) ---
+\newcommand{\authorslistnames}{}
+\newcommand{\addauthorname}[2]{%
+    \ifnum\value{nid}=1
+        \xdef\authorslistnames{#2 #1}%
+    \else
+        \xdef\authorslistnames{\authorslistnames, #2 #1}%
+    \fi
+}
+\newcommand{\listAuthorNames}{\authorslistnames}
 
 % --- Macro pour lister toutes les affiliations ---
 \newcommand{\listAffiliations}{%
@@ -281,4 +295,17 @@
         \xdef\tmplist{\tmplist\csname affil\romannumeral\id\endcsname\\}%
     }%
     \tmplist%
+}
+
+% --- Macro pour lister tous les auteurs avec leurs affiliations ---
+\newcommand{\listAllAuthorsWithAffiliations}{%
+    \foreach \i in {1,...,\value{nid}} {%
+        \textbf{Auth\romannumeral\i} : %
+        \edef\affilids{\csname auth\romannumeral\i affils\endcsname}%
+        \foreach \id [count=\n] in \affilids {%
+            \ifnum\n>1, \fi%
+            \csname affil\romannumeral\id\endcsname%
+        }%
+        \\[0.2cm]%
+    }%
 }
