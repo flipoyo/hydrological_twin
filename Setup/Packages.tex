@@ -226,3 +226,55 @@
   frame=lines,
   framesep=2mm
 }
+% --- Compteurs ---
+\newcounter{nid}          % Compteur pour les auteurs
+\newcounter{nrecord}      % Compteur pour les affiliations
+
+% --- Listes pour stocker les auteurs et leurs affiliations ---
+\newcommand{\authorslist}{}
+\newcommand{\affiliationslist}{}
+
+% --- Macro pour ajouter un auteur (format : Auth<i> : Nom, Prénoms) ---
+\newcommand{\addauthor}[2]{%
+    \stepcounter{nid}%
+    \ifnum\value{nid}=1
+        \xdef\authorslist{\textbf{Auth\roman{nid} : #1, #2}}%
+    \else
+        \xdef\authorslist{\authorslist, \textbf{Auth\roman{nid} : #1, #2}}%
+    \fi
+}
+
+% --- Macro pour ajouter une affiliation ---
+\newcommand{\addaffiliation}[1]{%
+    \stepcounter{nrecord}%
+    \expandafter\xdef\csname affil\roman{nrecord}\endcsname{#1}%
+}
+
+% --- Macro pour associer un auteur à une ou plusieurs affiliations ---
+\newcommand{\setaffiliations}[2]{%
+    \expandafter\xdef\csname auth\roman{nid}affils\endcsname{#2}%
+}
+
+% --- Macro pour lister les auteurs ---
+\newcommand{\listAuthors}{\authorslist}
+
+% --- Macro pour lister toutes les affiliations ---
+\newcommand{\listAffiliations}{%
+    \def\tmplist{}%
+    \foreach \i in {1,...,\value{nrecord}} {%
+        \ifcsname affil\roman{i}\endcsname%
+            \xdef\tmplist{\tmplist\csname affil\roman{i}\endcsname\\}%
+        \fi%
+    }%
+    \tmplist%
+}
+
+% --- Macro pour lister les affiliations d'un auteur spécifique ---
+\newcommand{\listAuthorAffiliations}[1]{%
+    \edef\affilids{\csname auth#1affils\endcsname}%
+    \def\tmplist{}%
+    \foreach \id in \affilids {%
+        \xdef\tmplist{\tmplist\csname affil\romannumeral=id\endcsname\\}%
+    }%
+    \tmplist%
+}

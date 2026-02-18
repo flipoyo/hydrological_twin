@@ -5,9 +5,52 @@
   
 \begin{document}
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\newcommand{\version}{3.50}
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%\addauthor{Nom}{Prénoms} : Ajoute un auteur au format spécifié et stocke ses informations dans \auth<i>.
+%\setaffiliations{#1}{#2} : Associe un auteur (#1 est l'identifiant romain, par exemple i, ii, iii) à une ou plusieurs affiliations (#2 est une liste d'identifiants d'affiliations).
+
+
+
+% --- Ajout des affiliations ---
+\addaffiliation{Mines Paris - PSL, Centre de Géosciences, Fontainebleau, France}
+\addaffiliation{Antea Group, Orléans, France}
+\addaffiliation{EOST/ENGEES, CNRS UMR 7063, ITES, Strasbourg, France}
+\addaffiliation{EPAGE bassin du Loing, Montargis, France}
+
+% --- Ajout des auteurs et association aux affiliations ---
+\addauthor{Flipo}{Nicolas}
+\setaffiliations{\roman{nid}}{1} % Auteur 1 est associé à l'affiliation 1
+
+\addauthor{Mazzarelli}{Simone}
+\setaffiliations{\roman{nid}}{1} % Auteur 2 est associé aux affiliations 1
+
+\addauthor{Gallois}{Nicolas}
+\setaffiliations{\roman{nid}}{1} % Auteur 3 est associé à l'affiliation 1
+
+\addauthor{Bourgeois}{Tristan}
+\setaffiliations{\roman{nid}}{2,1} 
+
+% Préciser contributeurs chez Antea
+
+\addauthor{Rambourg}{Dimitri}
+\setaffiliations{\roman{nid}}{3} 
+
+\addauthor{Weill}{Sylvain}
+\setaffiliations{\roman{nid}}{3} 
+
+\addauthor{Taki}{Mariam}
+\setaffiliations{\roman{nid}}{1} 
+
+\addauthor{Baratelli}{Fulvia}
+\setaffiliations{\roman{nid}}{1} 
+
+\addauthor{Guillou}{Pierre}
+\setaffiliations{\roman{nid}}{1} 
+
+\addauthor{Girod}{Lise-Maris}
+\setaffiliations{\roman{nid}}{4} 
+
+\addauthor{Ors}{Fabien}
+\setaffiliations{\roman{nid}}{1} 
 
 \include{Backmatter/Cover}                      
 
