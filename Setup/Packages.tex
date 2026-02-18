@@ -226,6 +226,10 @@
   frame=lines,
   framesep=2mm
 }
+
+% For \foreach loops in author/affiliation macros
+\usepackage{pgffor}
+
 % --- Compteurs ---
 \newcounter{nid}          % Compteur pour les auteurs
 \newcounter{nrecord}      % Compteur pour les affiliations
@@ -262,8 +266,8 @@
 \newcommand{\listAffiliations}{%
     \def\tmplist{}%
     \foreach \i in {1,...,\value{nrecord}} {%
-        \ifcsname affil\roman{i}\endcsname%
-            \xdef\tmplist{\tmplist\csname affil\roman{i}\endcsname\\}%
+        \ifcsname affil\romannumeral\i\endcsname%
+            \xdef\tmplist{\tmplist\csname affil\romannumeral\i\endcsname\\}%
         \fi%
     }%
     \tmplist%
@@ -274,7 +278,7 @@
     \edef\affilids{\csname auth#1affils\endcsname}%
     \def\tmplist{}%
     \foreach \id in \affilids {%
-        \xdef\tmplist{\tmplist\csname affil\romannumeral=id\endcsname\\}%
+        \xdef\tmplist{\tmplist\csname affil\romannumeral\id\endcsname\\}%
     }%
     \tmplist%
 }
