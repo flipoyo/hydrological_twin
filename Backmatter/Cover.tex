@@ -18,8 +18,10 @@
         \begin{flushleft}
             \vfill
             \includegraphics[height=1.5cm]{Figures/Logotype-rouge-bleu.png}
+            \vspace{0.5cm}
             
-            \listAuthors
+            % Liste des auteurs (noms uniquement)
+            {\large \listAuthorNames}
         \end{flushleft}
     \end{center}
 \end{titlepage}
@@ -40,10 +42,9 @@
         % Affiliations par auteur
         \vspace{1cm}
         {\Large \textbf{Affiliations par auteur :}\par}
+        \vspace{0.5cm}
         \begin{flushleft}
-            \textbf{Authi} : \listAuthorAffiliations{i} \\
-            \textbf{Authii} : \listAuthorAffiliations{ii} \\
-            \textbf{Authiii} : \listAuthorAffiliations{iii}
+            \listAllAuthorsWithAffiliations
         \end{flushleft}
 
         % Date sous la suite alpha

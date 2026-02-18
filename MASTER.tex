@@ -5,8 +5,8 @@
   
 \begin{document}
 
-%\addauthor{Nom}{Prénoms} : Ajoute un auteur au format spécifié et stocke ses informations dans \auth<i>.
-%\setaffiliations{#1}{#2} : Associe un auteur (#1 est l'identifiant romain, par exemple i, ii, iii) à une ou plusieurs affiliations (#2 est une liste d'identifiants d'affiliations).
+%\addauthor{Nom}{Prénoms} : Ajoute un auteur au format spécifié et stocke ses informations.
+%\setaffiliations{liste_ids} : Associe le dernier auteur ajouté à une ou plusieurs affiliations (liste d'identifiants d'affiliations séparés par des virgules, par exemple 1 ou 2,1).
 
 
 
@@ -18,39 +18,39 @@
 
 % --- Ajout des auteurs et association aux affiliations ---
 \addauthor{Flipo}{Nicolas}
-\setaffiliations{\roman{nid}}{1} % Auteur 1 est associé à l'affiliation 1
+\setaffiliations{1} % Auteur 1 est associé à l'affiliation 1
 
 \addauthor{Mazzarelli}{Simone}
-\setaffiliations{\roman{nid}}{1} % Auteur 2 est associé aux affiliations 1
+\setaffiliations{1} % Auteur 2 est associé aux affiliations 1
 
 \addauthor{Gallois}{Nicolas}
-\setaffiliations{\roman{nid}}{1} % Auteur 3 est associé à l'affiliation 1
+\setaffiliations{1} % Auteur 3 est associé à l'affiliation 1
 
 \addauthor{Bourgeois}{Tristan}
-\setaffiliations{\roman{nid}}{2,1} 
+\setaffiliations{2,1} 
 
 % Préciser contributeurs chez Antea
 
 \addauthor{Rambourg}{Dimitri}
-\setaffiliations{\roman{nid}}{3} 
+\setaffiliations{3} 
 
 \addauthor{Weill}{Sylvain}
-\setaffiliations{\roman{nid}}{3} 
+\setaffiliations{3} 
 
 \addauthor{Taki}{Mariam}
-\setaffiliations{\roman{nid}}{1} 
+\setaffiliations{1} 
 
 \addauthor{Baratelli}{Fulvia}
-\setaffiliations{\roman{nid}}{1} 
+\setaffiliations{1} 
 
 \addauthor{Guillou}{Pierre}
-\setaffiliations{\roman{nid}}{1} 
+\setaffiliations{1} 
 
 \addauthor{Girod}{Lise-Maris}
-\setaffiliations{\roman{nid}}{4} 
+\setaffiliations{4} 
 
 \addauthor{Ors}{Fabien}
-\setaffiliations{\roman{nid}}{1} 
+\setaffiliations{1} 
 
 \include{Backmatter/Cover}                      
 
