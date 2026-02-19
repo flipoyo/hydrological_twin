@@ -1,0 +1,59 @@
+\chapter*{Proto Class}
+\phantomsection
+\addstarredchapter{Proto Class}
+\fancyhead[LE]{\thepage} 
+\fancyhead[RE]{Proto Class}
+\fancyhead[RO]{\thepage} 
+\fancyhead[LO]{Proto Class}
+\fancyfoot[C]{\thepage}
+
+\renewcommand{\headrulewidth}{0.1pt}
+
+\setlength{\parindent}{0cm}
+\setlength{\parskip}{9pt}
+\vspace{-1cm}
+
+% -------------------------------------------------------------
+Convention d'ecriture Capital = Folders, camelCase filenames. 
+Structuration des données d'entrée pour \hydrot\ :
+
+\begin{verbatim}
+idCard.md
+temporalSupport.md
+COMPARTMENTi/
+....
+
+\end{verbatim}
+
+
+Contenu de \texttt{COMPARTMENTi} :
+\begin{verbatim}
+idCard.md
+SPATIAL\_SUPPORT (GeoData)
+PARAMETERS (GeoData)
+FORCINGS (NONE if internal compartment)
+DATA (OBS)
+SIMUL (Simulation outputs)
+....
+
+\end{verbatim}
+
+Où \texttt{idCard.md}
+\begin{verbatim}
+   modelName = 
+   version = 
+   repo-path = 
+   branch = (if void use commit_hash)
+   commit_hash = (if void, use branch)
+   OS = (name,version)
+   compilo = (gcc,version),(gfortran,version), autres ....
+   #scientific_certificate = none/dirty/ok %calculé à l'initialisation de HydroTwin
+   epsilon = (distance maximum absolue entre hypercubes)
+
+\end{verbatim}
+
+
+Chaque FOLDER contient l'information nécessaire pour init \texttt{SimplifiedGitSynchroRecord} (section \ref{p2c2_ssGitRec}, p. \pageref{p2c2_ssGitRec})
+
+
+Si \texttt{MODELID} existe il initialise \texttt{COMPARTMENTi/MODELID}
