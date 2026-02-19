@@ -1,10 +1,10 @@
-\chapter*{Proto Class}
+\chapter*{Input Data Specifications}
 \phantomsection
-\addstarredchapter{Proto Class}
+\addstarredchapter{Input Data Specifications}
 \fancyhead[LE]{\thepage} 
-\fancyhead[RE]{Proto Class}
+\fancyhead[RE]{Input Data Specifications}
 \fancyhead[RO]{\thepage} 
-\fancyhead[LO]{Proto Class}
+\fancyhead[LO]{Input Data Specifications}
 \fancyfoot[C]{\thepage}
 
 \renewcommand{\headrulewidth}{0.1pt}
@@ -14,46 +14,79 @@
 \vspace{-1cm}
 
 % -------------------------------------------------------------
-Convention d'ecriture Capital = Folders, camelCase filenames. 
-Structuration des données d'entrée pour \hydrot\ :
+
+This appendix specifies the input data structure expected by \hydrot\ at initialisation. The layout follows a strict hierarchical naming convention: directory names are written in \textsc{uppercase} and represent data categories, while file names adopt \texttt{camelCase} notation. This convention ensures unambiguous separation between structural containers and their contents across all platforms.
+
+% -------------------------------------------------------------
+
+\section*{Root-Level Structure}
+
+The top-level input directory contains the twin-wide configuration files and one subdirectory per compartment:
 
 \begin{verbatim}
 idCard.md
 temporalSupport.md
 COMPARTMENTi/
-....
-
+    ...
 \end{verbatim}
 
+The file \texttt{idCard.md} encodes the identity and provenance metadata of the twin as a whole, providing the information required to initialise a \texttt{SimplifiedGitSynchroRecord} instance (Section~\ref{p2c2_ssGitRec}, p.~\pageref{p2c2_ssGitRec}). The file \texttt{temporalSupport.md} specifies the temporal frame of the twin, including the start date, end date, and time step.
 
-Contenu de \texttt{COMPARTMENTi} :
+% -------------------------------------------------------------
+
+\section*{Compartment Directory Structure}
+
+Each compartment subdirectory \texttt{COMPARTMENTi} contains the following entries:
+
 \begin{verbatim}
 idCard.md
-SPATIAL\_SUPPORT (GeoData)
-PARAMETERS (GeoData)
-FORCINGS (NONE if internal compartment)
-DATA (OBS)
-SIMUL (Simulation outputs)
-....
-
+SPATIAL_SUPPORT/    (GeoData)
+PARAMETERS/         (GeoData)
+FORCINGS/           (NONE if internal compartment)
+DATA/               (OBS)
+SIMUL/              (Simulation outputs)
+    ...
 \end{verbatim}
 
-Où \texttt{idCard.md}
+\begin{itemize}
+    \item \textbf{\texttt{idCard.md}}: Identity and provenance metadata for the compartment, following the same schema as the twin-level file (see Section~\ref{p2c2_ssGitRec}).
+    \item \textbf{\texttt{SPATIAL\_SUPPORT/}}: Geospatial data defining the spatial discretisation of the compartment (\eg mesh, grid, or catchment boundaries).
+    \item \textbf{\texttt{PARAMETERS/}}: Geospatial data carrying the physical model parameters. This directory constitutes the only potentially private component of the \hydrot\ framework.
+    \item \textbf{\texttt{FORCINGS/}}: External forcings applied to the compartment (\eg meteorological inputs, boundary conditions). This directory is absent or empty for internal compartments that receive all inputs from adjacent compartments.
+    \item \textbf{\texttt{DATA/}}: Observational data against which model outputs are compared during estimation and calibration workflows.
+    \item \textbf{\texttt{SIMUL/}}: Simulation output files produced by the physical model engine and consumed by the Estimation and Analysis layers.
+\end{itemize}
+
+Each directory contains the information necessary to initialise a \texttt{SimplifiedGitSynchroRecord} instance (Section~\ref{p2c2_ssGitRec}, p.~\pageref{p2c2_ssGitRec}), ensuring full provenance tracking at the sub-compartment level. When a \texttt{MODELID} entry is present, it is used to initialise \texttt{COMPARTMENTi/MODELID} accordingly.
+
+% -------------------------------------------------------------
+
+\section*{Identity Card Schema (\texttt{idCard.md})}
+
+The \texttt{idCard.md} file is a plain-text metadata document providing the information required to uniquely identify a model version and its computational environment. Its schema is as follows:
+
 \begin{verbatim}
-   modelName = 
-   version = 
-   repo-path = 
-   branch = (if void use commit_hash)
-   commit_hash = (if void, use branch)
-   OS = (name,version)
-   compilo = (gcc,version),(gfortran,version), autres ....
-   #scientific_certificate = none/dirty/ok %calculé à l'initialisation de HydroTwin
-   epsilon = (distance maximum absolue entre hypercubes)
-
+modelName   =
+version     =
+repo-path   =
+branch      = (if void, use commit_hash)
+commit_hash = (if void, use branch)
+OS          = (name, version)
+compilo     = (gcc, version), (gfortran, version), ...
+epsilon     = (maximum absolute distance between hypercubes)
 \end{verbatim}
 
+The fields are defined as follows:
 
-Chaque FOLDER contient l'information nécessaire pour init \texttt{SimplifiedGitSynchroRecord} (section \ref{p2c2_ssGitRec}, p. \pageref{p2c2_ssGitRec})
+\begin{itemize}
+    \item \textbf{\texttt{modelName}}: Name of the physical model associated with this compartment or twin instance.
+    \item \textbf{\texttt{version}}: Model software version identifier.
+    \item \textbf{\texttt{repo-path}}: Path or URL to the model's Git repository.
+    \item \textbf{\texttt{branch}}: Active Git branch at the time of the run. If empty, \texttt{commit\_hash} is used for identification.
+    \item \textbf{\texttt{commit\_hash}}: Git commit hash of the model code. If empty, \texttt{branch} is used. At least one of \texttt{branch} or \texttt{commit\_hash} must be non-empty.
+    \item \textbf{\texttt{OS}}: Operating system name and version under which the model was compiled and executed.
+    \item \textbf{\texttt{compilo}}: Compiler chain with version numbers (\eg GCC, GFortran, and any additional compilers). This field captures the build environment required for exact reproducibility.
+    \item \textbf{\texttt{epsilon}}: Maximum absolute distance tolerated between hypercubes during consistency verification. This threshold governs the numerical equivalence criterion applied during state comparison.
+\end{itemize}
 
-
-Si \texttt{MODELID} existe il initialise \texttt{COMPARTMENTi/MODELID}
+The field \texttt{scientific\_certificate}, which may take the values \texttt{none}, \texttt{dirty}, or \texttt{ok}, is not specified in the input file. It is computed automatically by \hydrot\ at initialisation based on the Git state of the repository at load time, and is stored in the registry accordingly.
