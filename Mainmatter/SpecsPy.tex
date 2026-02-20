@@ -57,7 +57,7 @@ SIMUL/              (Simulation outputs)
     \item \textbf{\texttt{SIMUL/}}: Simulation output files produced by the physical model engine and consumed by the Estimation and Analysis layers.
 \end{itemize}
 
-Each directory contains the information necessary to initialise a \texttt{SimplifiedGitSynchroRecord} instance (Section~\ref{p2c2_ssGitRec}, p.~\pageref{p2c2_ssGitRec}), ensuring full provenance tracking at the sub-compartment level. When a \texttt{MODELID} entry is present, it is used to initialise \texttt{COMPARTMENTi/MODELID} accordingly.
+Each directory contains the information necessary to initialise a \texttt{SimplifiedGitSynchroRecord} instance (Section~\ref{p2c2_ssGitRec}, p.~\pageref{p2c2_ssGitRec}), ensuring full provenance tracking at the sub-compartment level. When a \texttt{idCard.md} entry is present, it is used to initialise the Id of all \texttt{COMPARTMENT} before reading each individual \texttt{COMPARTMENTi/idCard.md}.
 
 % -------------------------------------------------------------
 
