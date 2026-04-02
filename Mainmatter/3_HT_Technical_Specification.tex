@@ -14,9 +14,9 @@
 \section{Goal}
 
 The \texttt{HydrologicalTwin} (HT) is a monolithic backend façade for CaWaQS-ViZ.  
-It is designed as the \emph{only} backend entry point used by the QGIS plugin.
+It is designed as the \emph{only} backend entry point used by the QGIS plugin, but it is now implemented as a standalone Python package rather than as an internal plugin subpackage.
 
-HT reuses the existing CaWaQS-ViZ code base without rewriting it, including:
+The public \texttt{HydrologicalTwinAlphaSeries} repository keeps reusing the existing scientific CaWaQS objects without rewriting them, including:
 \begin{itemize}
     \item \texttt{Compartment}, \texttt{Mesh}, \texttt{Observations}, \texttt{Extraction}
     \item \texttt{Manage.Temporal}, \texttt{Manage.Budget}, \texttt{Manage.Spatial}
@@ -38,17 +38,21 @@ This architecture deliberately does not rewrite the existing code base; instead,
 
 \subsection{Package Layout}
 
-The new \texttt{ht} subpackage is introduced inside the existing \texttt{cawaqsviz} package:
+The current public alpha implementation is distributed as the standalone package \texttt{hydrological\_twin\_alpha\_series}, intended to be consumed by \texttt{cawaqsviz} through an editable install or submodule checkout. Its relevant backend structure is:
 
 \begin{verbatim}
-cawaqsviz/
+src/hydrological_twin_alpha_series/
+    __init__.py
     Compartment.py
     Mesh.py
     Observations.py
     Extraction.py
     Manage.py
-    interface/
-        Config.py
+    Renderer.py
+    Vec_Operator.py
+    config/
+        __init__.py
+        ...
     ht/
         __init__.py
         hydrological_twin.py
@@ -56,7 +60,7 @@ cawaqsviz/
         persistence.py
 \end{verbatim}
 
-The existing modules (\texttt{Compartment}, \texttt{Mesh}, \texttt{Observations}, \texttt{Extraction}, \texttt{Manage}) remain unchanged.
+The existing scientific modules (\texttt{Compartment}, \texttt{Mesh}, \texttt{Observations}, \texttt{Extraction}, \texttt{Manage}) remain unchanged in role; the main evolution is that the monolithic backend façade is now packaged independently from the QGIS application layer.
 
 \subsection{HydrologicalTwin Construction}
 
