@@ -136,12 +136,12 @@ The combination of Git provenance, deterministic fingerprinting, and append-only
 
 \subsection{Proto Implementation: \hydrot\ Alpha Series}
 
-The operational deployment of \hydrot\ as the monolithic backend for the CaWaQS-ViZ QGIS plugin demonstrates practical realization of space-state ontology in production environments. The alpha implementation series provides:
+The operational deployment of \hydrot\ as the monolithic backend for the CaWaQS-ViZ QGIS plugin demonstrates practical realization of space-state ontology in production environments. The public implementation is now published as the standalone repository \texttt{HydrologicalTwinAlphaSeries} and corresponding Python package \texttt{hydrological\_twin\_alpha\_series}. This alpha implementation series provides:
 \begin{itemize}
-\item Simplified public-facing interface without authentication requirements
-\item Read-only visualization and exploratory analysis capabilities
-\item Basic provenance tracking through \texttt{SimplifiedGitSynchroRecord}
-\item Unified data access API abstracting binary format complexities
+\item a standalone monolithic backend façade exposed as \texttt{HydrologicalTwin}
+\item read-only visualization and exploratory analysis capabilities
+\item typed API responses and lightweight pickle-based persistence for public workflows
+\item a unified data access API abstracting binary format complexities while remaining reusable outside the QGIS code base
 \end{itemize}
 
 \subsection{Architectural Integration Strategy}

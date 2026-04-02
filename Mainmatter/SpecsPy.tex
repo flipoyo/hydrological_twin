@@ -30,7 +30,7 @@ COMPARTMENTi/
     ...
 \end{verbatim}
 
-The file \texttt{idCard.md} encodes the identity and provenance metadata of the twin as a whole, providing the information required to initialise a \texttt{SimplifiedGitSynchroRecord} instance (Section~\ref{p2c2_ssGitRec}, p.~\pageref{p2c2_ssGitRec}). The file \texttt{temporalSupport.md} specifies the temporal frame of the twin, including the start date, end date, and time step.
+The file \texttt{idCard.md} encodes the identity and provenance metadata of the twin as a whole, providing the information required to reconstruct the lightweight public provenance context described in Section~\ref{p2c2_ssGitRec} (p.~\pageref{p2c2_ssGitRec}). The file \texttt{temporalSupport.md} specifies the temporal frame of the twin, including the start date, end date, and time step.
 
 % -------------------------------------------------------------
 
@@ -49,7 +49,7 @@ SIMUL/              (Simulation outputs)
 \end{verbatim}
 
 \begin{itemize}
-    \item \textbf{\texttt{idCard.md}}: Identity and provenance metadata for the compartment, following the same schema as the twin-level file (see Section~\ref{p2c2_ssGitRec}).
+    \item \textbf{\texttt{idCard.md}}: Identity and provenance metadata for the compartment, following the same schema as the twin-level file and supporting the public reproducibility workflow described in Section~\ref{p2c2_ssGitRec}.
     \item \textbf{\texttt{SPATIAL\_SUPPORT/}}: Geospatial data defining the spatial discretisation of the compartment (\eg mesh, grid, or catchment boundaries).
     \item \textbf{\texttt{PARAMETERS/}}: Geospatial data carrying the physical model parameters. This directory constitutes the only potentially private component of the \hydrot\ framework.
     \item \textbf{\texttt{FORCINGS/}}: External forcings applied to the compartment (\eg meteorological inputs, boundary conditions). This directory is absent or empty for internal compartments that receive all inputs from adjacent compartments.
@@ -57,7 +57,7 @@ SIMUL/              (Simulation outputs)
     \item \textbf{\texttt{SIMUL/}}: Simulation output files produced by the physical model engine and consumed by the Estimation and Analysis layers.
 \end{itemize}
 
-Each directory contains the information necessary to initialise a \texttt{SimplifiedGitSynchroRecord} instance (Section~\ref{p2c2_ssGitRec}, p.~\pageref{p2c2_ssGitRec}), ensuring full provenance tracking at the sub-compartment level. When a \texttt{idCard.md} entry is present, it is used to initialise the Id of all \texttt{COMPARTMENT} before reading each individual \texttt{COMPARTMENTi/idCard.md}.
+Each directory contains the information necessary to reconstruct the corresponding public provenance context (Section~\ref{p2c2_ssGitRec}, p.~\pageref{p2c2_ssGitRec}), ensuring consistent provenance tracking at the sub-compartment level. When a \texttt{idCard.md} entry is present, it is used to initialise the Id of all \texttt{COMPARTMENT} before reading each individual \texttt{COMPARTMENTi/idCard.md}.
 
 % -------------------------------------------------------------
 
