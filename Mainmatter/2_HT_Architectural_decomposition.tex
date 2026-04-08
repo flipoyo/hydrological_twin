@@ -133,7 +133,9 @@ For an implementation that follows the White Book cases efficiently, the safest 
 \item \textbf{Why this direction is preferable.} The inverse approach---public by default with private methods marked individually---is more fragile, because a forgotten decorator may expose a sensitive capability. In contrast, a private-by-default class with explicit public exceptions is aligned with the White Book distinction between a narrow public rendering surface and a broader private computation surface.
 \end{itemize}
 
-Decorators should nevertheless be understood as \textbf{policy declarations}, not as the security boundary itself. Effective protection must still be enforced at the service boundary through server-side authentication, authorization, entitlement verification, and systematic audit registration in the \texttt{GitSynchroRecord}-centred provenance chain. In practice, this means that \cwv\ should call public methods through a public service façade, whereas private clients should pass through an authenticated façade that validates credentials before any sensitive method is executed.
+Decorators should nevertheless be understood as \textbf{policy declarations}, not as the security boundary itself. Effective protection must still be enforced at the service boundary through server-side authentication, authorization, entitlement verification, and systematic audit registration in the \texttt{GitSynchroRecord}-centred provenance chain.
+
+In practice, \cwv\ should call only the methods exposed through a public service façade. Private clients should instead pass through an authenticated façade that validates credentials before any sensitive method is executed.
 
 \subsection{User profiles}
 
