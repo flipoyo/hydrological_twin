@@ -123,7 +123,7 @@ This tiering allows the same twin to support open scientific communication at th
 
 \subsection{Decorator-based enforcement strategy}
 
-For an implementation that follows the White Book access-control cases efficiently, the safest convention is a \textbf{fail-closed} one: the authenticated \texttt{HydroTwin} service class should be declared \emph{private by default}, and only the explicitly approved public methods should be marked as public.
+For an implementation that follows the White Book access-control cases efficiently, the safest convention is a \textbf{fail-closed} one (\ie access is denied by default unless it is explicitly opened): the authenticated \texttt{HydroTwin} service class should be declared \emph{private by default}, and only the explicitly approved public methods should be marked as public.
 
 \begin{itemize}
 \item \textbf{Class decorator for the private computation tier.} A class-level decorator can declare that all methods of the authenticated service belong by default to the private computation tier and therefore require prior entitlement verification, user authentication, and audit logging.
