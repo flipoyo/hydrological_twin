@@ -121,6 +121,20 @@ Before instantiation, HydrologicalTwin performs a multi-stage validation:
 
 This tiering allows the same twin to support open scientific communication at the rendering level while preserving private economic and operational value at the computational level.
 
+\subsection{Decorator-based enforcement strategy}
+
+For an implementation that follows the White Book cases efficiently, the safest convention is a \textbf{fail-closed} one: the authenticated \texttt{HydroTwin} service class should be declared \emph{private by default}, and only the explicitly approved public methods should be marked as public.
+
+\begin{itemize}
+\item \textbf{Class decorator for the private computation tier.} A class-level decorator can declare that all methods of the authenticated service belong by default to the private computation tier and therefore require prior entitlement verification, user authentication, and audit logging.
+
+\item \textbf{Method decorator for public exceptions.} Read-only methods intended for \cwv\ or other public rendering clients can then be whitelisted one by one through a method decorator. These methods should remain limited to renderings, aggregated indicators, masked values, and non-reversible summaries.
+
+\item \textbf{Why this direction is preferable.} The inverse approach---public by default with private methods marked individually---is more fragile, because a forgotten decorator may expose a sensitive capability. In contrast, a private-by-default class with explicit public exceptions is aligned with the White Book distinction between a narrow public rendering surface and a broader private computation surface.
+\end{itemize}
+
+Decorators should nevertheless be understood as \textbf{policy declarations}, not as the security boundary itself. Effective protection must still be enforced at the service boundary through server-side authentication, authorization, entitlement verification, and systematic audit registration in the \texttt{GitSynchroRecord}-centred provenance chain. In practice, this means that \cwv\ should call public methods through a public service façade, whereas private clients should pass through an authenticated façade that validates credentials before any sensitive method is executed.
+
 \subsection{User profiles}
 
 The main user profiles are the following:

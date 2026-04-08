@@ -269,6 +269,40 @@ Ongoing and planned developments for the \hydrot\ - \cwv integration include:
     \item self-integrity-check, which inform the HydroTwin \texttt{status} = dirty if self-integrity = NO. Multiple steps : about data, gitSync, first ; and then forward simulation for comparison of 2 hypercubes
 \end{itemize}
 
+\subsection{Feasible service-layer implementation for tiered access}
+
+The question of whether Django is appropriate for a first service implementation should be separated from the numerical performance question. In the \hydrot\ context, the computational cost is dominated by NumPy arrays, binary I/O, geospatial processing, and model execution; these costs are not materially determined by whether the HTTP boundary is written with Django, FastAPI, or another Python framework. Python is therefore not disqualified here by principle, provided that heavy computations are not executed naïvely inside blocking web requests.
+
+\paragraph{Why Django remains appropriate for a fast feasibility check}
+
+Django is a credible option for a rapid demonstrator of the White Book access model because it already provides:
+\begin{itemize}
+    \item mature authentication and session management;
+    \item a clear middleware and decorator model for access checks;
+    \item an administrative back office for entitlement and user management;
+    \item a stable testing framework that can support continuous deployment smoke checks.
+\end{itemize}
+
+If the immediate goal is to verify that the public tier, the private computation tier, and the restricted expert tier can be enforced reliably, Django is therefore appropriate as a \textbf{control-plane} technology.
+
+\paragraph{Architectural condition}
+
+Even with Django, the web layer should remain thin. Long extractions, simulation launches, calibration procedures, and Bayesian inference should be dispatched to background workers or to the existing scientific backend rather than being executed directly in the synchronous request-response cycle. The service layer should authenticate, authorize, log, and schedule; the numerical kernels should remain in the \hydrot\ backend itself.
+
+\paragraph{When a lighter framework may be preferable}
+
+If the primary objective is not an administrative portal but a typed scientific API for \cwv\ and future clients, a lighter API-first framework such as \textbf{FastAPI} may be preferable for the first production service layer. It fits well with the current monolithic Python façade, exposes explicit request/response schemas, and makes it straightforward to build fast automated checks of route-level permissions in continuous deployment.
+
+\paragraph{Recommended direction}
+
+For \hydrot, the most coherent path is therefore:
+\begin{enumerate}
+    \item keep the scientific core in Python;
+    \item implement the permission logic as private-by-default service classes with explicit public method exceptions;
+    \item expose this logic through a thin server-side boundary;
+    \item use Django if rapid authentication and administration are the priority, or prefer FastAPI if the first objective is a compact, typed API gateway for \cwv\ and other clients.
+\end{enumerate}
+
 For detailed information about \cwv capabilities and usage, refer to the \cwv user guide (\url{https://gitlab.com/cawaqs/gviz/cawaqsviz}).
 
 % --------------------------------------------------------------
