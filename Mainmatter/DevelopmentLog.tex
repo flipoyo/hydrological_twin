@@ -269,7 +269,7 @@ Ongoing and planned developments for the \hydrot\ - \cwv integration include:
     \item self-integrity-check, which inform the HydroTwin \texttt{status} = dirty if self-integrity = NO. Multiple steps : about data, gitSync, first ; and then forward simulation for comparison of 2 hypercubes
 \end{itemize}
 
-\subsection{Feasible service-layer implementation for tiered access}
+\subsection{Service-layer Implementation for Tiered Access Control}
 
 The question of whether Django is appropriate for a first service implementation should be separated from the numerical performance question. In the \hydrot\ context, the computational cost is dominated by NumPy arrays, binary I/O, geospatial processing, and model execution; these costs are not materially determined by whether the HTTP boundary is written with Django, FastAPI, or another Python framework. Python is therefore not disqualified here by principle, provided that heavy computations are not executed naïvely inside blocking web requests.
 
