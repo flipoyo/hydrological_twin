@@ -59,6 +59,34 @@ The data flow is structured as:
 
 Each transformation produces a new git-synchronized state.
 
+\subsubsection{Managed Input-Output Flow}
+
+\begin{figure}[H]
+\centering
+\fbox{%
+\begin{minipage}{0.94\textwidth}
+\centering
+\textbf{Inputs}\\
+public forcings, observations, spatial layers, model software, configuration manifests, private parameterizations, and entitlement proofs\\[0.2cm]
+$\Downarrow$\\[0.2cm]
+\textbf{Hydrological Twin managed services}\\
+ingest $\rightarrow$ verify $\rightarrow$ structure $\rightarrow$ compute $\rightarrow$ analyse $\rightarrow$ render $\rightarrow$ register\\[0.2cm]
+$\Downarrow$\\[0.2cm]
+\textbf{Outputs}\\
+public visualizations and aggregated indicators \quad | \quad private extracted hypercubes, simulation products, calibration results, and audit records
+\end{minipage}}
+\caption{Managed input-output flow of \hydrot.}
+\label{fig:ht-managed-flow}
+\end{figure}
+
+\subsubsection{Semantic Contract of \hydrot}
+
+\hydrot\ is not merely a file container or a software wrapper. Its semantics are those of a stateful scientific contract binding inputs, transformations, permissions, and outputs within the same auditable space-state. In this contract, observations, forcings, numerical models, parameters, and software provenance become synchronized components of one reproducible object rather than loosely coupled external resources.
+
+This semantic contract is aligned with the current \texttt{HydrologicalTwinAlphaSeries} positioning: the standalone backend remains responsible for computation, data structuring, and controlled programmatic interfaces, whereas \cwv\ remains responsible for visualization, interaction, and GIS mediation. The White Book therefore treats \hydrot\ as the backend authority that determines what may be computed, exposed, exported, and registered.
+
+An important semantic consequence is that NumPy hypercubes are internal numerical states, not public communication products. Public access is granted only to derived renderings, aggregated indicators, and non-reversible summaries that do not reveal raw hypercube values. All computational methods that would expose, transform, or regenerate raw hypercube content remain private services.
+
 % --- MODIFICATION DE 2.1.3 ---
 \subsubsection{Metadata Verification and Private-Key Authentication}
 Before instantiation, HydrologicalTwin performs a multi-stage validation:
@@ -74,6 +102,38 @@ Before instantiation, HydrologicalTwin performs a multi-stage validation:
 % --- FIN DE LA MODIFICATION ---
 
 
+
+% ---------------------------------------------------------------------
+
+\section{Access Semantics, Permission Tiers, and User Profiles}
+
+\subsection{Permission tiers}
+
+\hydrot\ implements a layered permission model in which the openness of visualization is preserved without exposing the computational core.
+
+\begin{enumerate}
+\item \textbf{Public rendering tier.} No authentication is required. Users may view maps, plots, dashboards, and aggregated statistics provided that the published products do not reveal raw NumPy hypercube values, full private parameterizations, or unrestricted extraction capabilities.
+
+\item \textbf{Private computation tier.} Computational methods are private and accessible only after proof of purchase by cryptocurrency. The corresponding entitlement is tokenized on blockchain infrastructure and linked to a registered cryptographic credential used by the platform to authorize access. This tier unlocks raw extraction, advanced analysis, simulation execution, and controlled export services.
+
+\item \textbf{Restricted expert tier.} Higher privacy levels can be attached to stronger tokenized entitlements for workflows such as parameter editing, self-fitting, calibration, Bayesian inference, multi-stage estimation, and administrative governance of private repositories.
+\end{enumerate}
+
+This tiering allows the same twin to support open scientific communication at the rendering level while preserving private economic and operational value at the computational level.
+
+\subsection{User profiles}
+
+The main user profiles are the following:
+
+\begin{itemize}
+\item \textbf{Public observer.} Consults public maps, plots, and summary indicators, with no access to raw hypercube data.
+\item \textbf{Scientific analyst.} Uses token-gated private services to extract subsets, compare simulations and observations, and run reproducible analytical workflows.
+\item \textbf{Operational operator.} Executes private simulation and scenario services for planning, monitoring, and operational decision support.
+\item \textbf{Twin owner or commercial subscriber.} Holds the strongest entitlement level, including parameter management, calibration, and access to protected configuration assets.
+\item \textbf{Auditor or regulator.} Reviews provenance records, validation traces, and published outputs without necessarily obtaining raw data modification rights.
+\end{itemize}
+
+These profiles are logical roles. A single actor may hold multiple roles if the corresponding entitlement tokens have been acquired and registered.
 
 % ---------------------------------------------------------------------
 

@@ -17,6 +17,62 @@ This chapter presents the principal use cases of \hydrot, organized according to
 
 % ---------------------------------------------------------------------
 
+\section{Service Specifications and Delivery Roadmap}
+
+\subsection{Service specification baseline}
+
+Before defining use cases, the White Book must specify the service perimeter exposed by \hydrot. The current target service portfolio is ordered from public exposure to private computation:
+
+\begin{enumerate}
+\item \textbf{Public rendering service.}
+\begin{itemize}
+    \item \textbf{Purpose}: publish maps, plots, dashboards, and aggregated indicators for open consultation.
+    \item \textbf{Inputs}: validated hypercubes, rendering parameters, masks, temporal and spatial aggregation operators.
+    \item \textbf{Outputs}: non-reversible visualizations, public reports, and aggregated statistics that do not reveal raw hypercube values.
+    \item \textbf{Access}: public.
+\end{itemize}
+
+\item \textbf{Private data access and computation service.}
+\begin{itemize}
+    \item \textbf{Purpose}: expose extraction, comparison, transformation, and scenario-building methods to entitled users.
+    \item \textbf{Inputs}: validated twin state, user request, tokenized proof of purchase, and cryptographic authentication material.
+    \item \textbf{Outputs}: extracted subsets, analysis-ready datasets, derived computational artefacts, and authenticated audit traces.
+    \item \textbf{Access}: private, subject to proof of purchase by cryptocurrency and blockchain-anchored entitlement verification.
+\end{itemize}
+
+\item \textbf{Private simulation and estimation service.}
+\begin{itemize}
+    \item \textbf{Purpose}: execute simulations, parameter updates, self-fitting workflows, frequency-domain calibration, and time-domain Bayesian inference.
+    \item \textbf{Inputs}: model configuration, private parameterizations, observations, priors, and estimation settings.
+    \item \textbf{Outputs}: new twin states, calibrated parameters, posterior distributions, and provenance-rich validation records.
+    \item \textbf{Access}: restricted private tier.
+\end{itemize}
+
+\item \textbf{Registry and audit service.}
+\begin{itemize}
+    \item \textbf{Purpose}: register state transitions, access events, entitlement checks, and publication events.
+    \item \textbf{Inputs}: git provenance, environment fingerprints, authenticated user claims, and validation events.
+    \item \textbf{Outputs}: append-only audit records and reproducibility evidence.
+    \item \textbf{Access}: mixed; publication traces can be public while sensitive computational traces remain private.
+\end{itemize}
+\end{enumerate}
+
+\subsection{Roadmap for White Book professionalization}
+
+The issue addressed by this update can be translated into the following delivery roadmap:
+
+\begin{enumerate}
+\item \textbf{Clarify the managed flow.} Make the input-output chain explicit: data sources, models, parameterizations, entitlement proofs, computational layers, public renderings, and private outputs.
+\item \textbf{Stabilize the semantics.} Describe \hydrot\ as the authoritative backend contract coordinating reproducibility, access control, and service exposure for \texttt{HydrologicalTwinAlphaSeries} and \cwv.
+\item \textbf{Formalize permission levels.} Distinguish public visualization from private computation, and specify that computational methods are unlocked only by blockchain-based proof of purchase through cryptocurrency.
+\item \textbf{Define user profiles.} Separate public observers, analysts, operators, subscribers, and auditors so that access rules become operational rather than implicit.
+\item \textbf{Specify services before scenarios.} Present rendering, computation, estimation, and registry services first; only then describe the use cases that consume them.
+\end{enumerate}
+
+This sequencing is consistent with the present implementation trajectory: \texttt{HydrologicalTwinAlphaSeries} remains the standalone backend package, while \cwv\ remains the visualization client consuming public and private services through controlled interfaces.
+
+% ---------------------------------------------------------------------
+
 \section{Use Case 1: Instantiation and Scientific Integrity Verification - \texttt{private}}
 
 \subsection{Context and Objective}
@@ -25,9 +81,9 @@ Instantiating a \hydrot\ instance is the foundational operation that establishes
 
 \subsection{Access Level}
 
-\textbf{Private-key authentication required.}
+\textbf{Private-key authentication and tokenized entitlement required.}
 
-Only authenticated users with valid private keys can instantiate a \hydrot\ instance. This ensures that the creation of digital twins is controlled, traceable, and linked to specific actors.
+Only authenticated users holding a valid private credential and an active tokenized entitlement can instantiate a private \hydrot\ instance. This ensures that the creation of digital twins is controlled, traceable, and linked to specific actors.
 
 \subsection{Operational Workflow}
 
@@ -42,8 +98,7 @@ The instantiation process follows a strict validation sequence:
     \item Configuration file versions
 \end{itemize}
 
-TODO: function integrity-check() hydroTwin must verify the integrity of the data by simulating the output dataset (need to build a virtual env, compile the software and execute the simulation, compare the resulting hypercube with the one derived from the input data (user specified simulation outputs). 
-
+\item \textbf{Deterministic integrity check}: The system verifies that the declared computational environment can reproduce the expected simulation artefacts and that the resulting hypercube fingerprint matches the registered reference state.
 
 \item \textbf{Private-key authentication}: The system validates the user's private key and logs the authentication event with:
 \begin{itemize}
@@ -52,6 +107,8 @@ TODO: function integrity-check() hydroTwin must verify the integrity of the data
     \item Host metadata
     \item Cryptographic signature
 \end{itemize}
+
+\item \textbf{Entitlement verification}: The system checks that the actor holds a valid blockchain-anchored proof of purchase authorizing private instantiation and computation services for the requested privacy tier.
 
 \item \textbf{Git provenance verification}: Each component must have a clean working tree (no dirty state) or explicitly declared modifications. The system computes deterministic version fingerprints for all components.
 
@@ -72,7 +129,7 @@ Upon successful instantiation, \hydrot\ certifies that:
 If any verification step fails, the instantiation is aborted and the system logs:
 
 \begin{verbatim}
-Error: Access denied. Invalid metadata or private-key.
+Error: Access denied. Invalid metadata, private-key, or entitlement.
 Reason: [specific verification failure]
 \end{verbatim}
 
@@ -99,14 +156,14 @@ This use case addresses the needs of public users who require access to simulati
 
 \textbf{Public access (no authentication required).}
 
-Any user can access simulation results through aggregation (TODO use temporal and spatial operators) and mask using the \texttt{rendering} layer. This ensures transparency while protecting sensitive information.
+Any user can access simulation results through controlled temporal and spatial aggregation in the \texttt{rendering} layer. This ensures transparency while protecting sensitive information.
 
 \subsection{Available Operations}
 
-Public users can perform the following operations through the \texttt{rendering} Layer:
+Public users can perform the following operations through the \texttt{rendering} layer:
 
 \begin{itemize}
-\item \textbf{Spatial visualization}: Display maps of simulated variables (water table elevation, discharge, recharge) with standard symbolization and CRS enforcement (TODO explain CRS).
+\item \textbf{Spatial visualization}: Display maps of simulated variables (water table elevation, discharge, recharge) with standard symbolization and coordinate reference system enforcement.
 
 \item \textbf{Temporal visualization}: Plot time series of basin-averaged or station-specific variables.
 
@@ -137,6 +194,8 @@ Public users \textbf{cannot}:
 \item Execute new simulations
 \item Apply arbitrary temporal or spatial operators beyond pre-defined aggregations
 \end{itemize}
+
+This rule is fundamental: public visualization is permitted only insofar as it does not disclose the raw numerical content of the underlying hypercubes.
 
 \subsection{Implementation through CaWaQS-ViZ}
 
@@ -181,7 +240,7 @@ Typical applications include:
 
 \subsection{Access Level}
 
-\textbf{Private-key authentication required.}
+\textbf{Private-key authentication and tokenized entitlement required.}
 
 SubTwin extraction involves accessing raw simulation outputs and potentially modifying spatial or temporal supports, which are restricted operations.
 
@@ -260,7 +319,7 @@ This use case addresses advanced analytical workflows that require full access t
 
 \subsection{Access Level}
 
-\textbf{Private-key authentication required.}
+\textbf{Private-key authentication and tokenized entitlement required.}
 
 These operations involve modifying parameters, executing new simulations, and accessing raw hypercube data.
 
@@ -281,7 +340,7 @@ The parameter calibration use case follows this sequence:
     \item Deep learning surrogate models for parameter emulation
 \end{itemize}
 
-\item \textbf{Generate ensemble of hypercubes: Each calibration iteration produces a new  hypercube instance with updated parameters and corresponding simulation outputs.
+\item \textbf{Generate ensemble of hypercubes}: Each calibration iteration produces a new hypercube instance with updated parameters and corresponding simulation outputs.
 
 \item \textbf{Registry and provenance}: Each hypercube is registered with its corresponding meta-data gitSynchronizable :
 \begin{itemize}
@@ -294,7 +353,7 @@ The parameter calibration use case follows this sequence:
 
 \subsection{The \texttt{.self\_fitting()} Method}
 
-The \texttt{.self\_fitting()} method provides an integrated, automated calibration workflow within the \hydrot\ framework. This method encapsulates the complete calibration procedure as a native operation accessible only after successful instantiation with private-key authentication.
+The \texttt{.self\_fitting()} method provides an integrated, automated calibration workflow within the \hydrot\ framework. This method encapsulates the complete calibration procedure as a native operation accessible only after successful instantiation with private-key authentication and entitlement verification.
 
 \subsubsection{Access Requirements and Preconditions}
 
@@ -303,7 +362,7 @@ The \texttt{.self\_fitting()} method requires:
 \begin{enumerate}
 \item \textbf{Successful twin instantiation}: The method is only accessible after the \hydrot\ instance has been instantiated with full scientific integrity verification.
 
-\item \textbf{Private-key authentication}: As a parameter-modifying operation, \texttt{.self\_fitting()} requires authenticated access with a valid private key.
+\item \textbf{Private-key authentication and entitlement verification}: As a parameter-modifying operation, \texttt{.self\_fitting()} requires authenticated access with a valid private key and an active blockchain-anchored proof of purchase.
 
 \item \textbf{Certified reproducibility}: The initial simulation state must be certified as reproducible, ensuring that all subsequent calibration iterations maintain traceability.
 
