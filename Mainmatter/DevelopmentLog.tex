@@ -93,34 +93,32 @@ and interact exclusively through the \hydrot\ API, avoiding direct calls to inte
 
 \subsection{API Design Principles}
 
-The \hydrot\ API exposed to \cwv follows composable design principles, providing a small set of orthogonal primitives that can be combined to address diverse analysis requirements:
+The \hydrot\ API exposed to \cwv now follows the canonical seven-method contract of the monolithic \texttt{HydrologicalTwin} class. Client dialogs are expected to rely on the stable macro entrypoints \texttt{configure}, \texttt{load}, \texttt{describe}, \texttt{extract}, \texttt{transform}, \texttt{render}, and \texttt{export}, while the internal delegation to \texttt{Manage}, \texttt{Vec\_Operator}, and rendering utilities remains private to the backend implementation.
 
-\paragraph{Composable Primitives}
+\paragraph{Canonical Macro Methods}
 
 \begin{itemize}
-    \item \texttt{extract\_values(compartment, variable, date\_range)}: Retrieves raw simulation values with associated temporal coordinates. No aggregation applied.
-    
-    \item \texttt{extract\_area\_values(compartment, variable, spatial\_operator)}: Extracts values over spatial subsets (\eg basin masks, aquifer layers). Supports catchment-level extraction and custom polygon filtering.
-    
-    \item \texttt{apply\_temporal\_operator(data, operator, parameters)}: Applies temporal transformations (\eg monthly mean, hydrological regime, rolling statistics). Operates on \texttt{datetime64} arrays for precision.
-    
-    \item \texttt{read\_observations(variable, location, date\_range)}: Loads observational time series aligned with simulation periods. Provides unified interface for simulation-observation comparison.
-    
-    \item \texttt{apply\_spatial\_average(data, spatial\_support, weights)}: Performs weighted spatial averaging or reduction operations.
+    \item \texttt{configure(...)}: register project paths, geometry, runtime options, and access mode;
+    \item \texttt{load(...)}: initialize the backend state from declared inputs, cache artefacts, or serialized snapshots;
+    \item \texttt{describe(...)}: expose controlled metadata about compartments, layers, observations, variables, and backend state;
+    \item \texttt{extract(...)}: retrieve normalized scientific products such as time series, observations, spatial maps, or aquifer outcropping subsets;
+    \item \texttt{transform(...)}: apply temporal, spatial, budget, and statistical operators to extracted products;
+    \item \texttt{render(...)}: create public-facing maps, static reports, and simulation-observation visualizations;
+    \item \texttt{export(...)}: write canonical outputs (CSV, figures, reports, cache files) to persistent storage.
 \end{itemize}
 
-These primitives are deliberately kept minimal and generic. Higher-level analyses (\eg hydrological regime computation, model-observation comparison) are constructed by composing primitives rather than being hardcoded as monolithic API methods. This design maximizes flexibility and code reuse across different \cwv dialogs.
+This macro API keeps the client-side contract stable while still allowing the backend to reuse the historical CaWaQS scientific stack internally. The recently removed transition helpers are therefore not part of the documented public interface: \cwv\ should depend only on the canonical macro methods.
 
 \paragraph{Design Rationale}
 
-The composable API design reflects the architectural principle that the backend should provide data transformation primitives, not complete analysis workflows. This ensures:
+The macro-oriented design reflects the architectural principle that the backend should expose a stable service contract while retaining freedom to reorganize internal delegation paths. This ensures:
 
 \begin{itemize}
-    \item \textbf{Adaptability}: New analysis types can be implemented in frontend dialogs by recombining existing primitives, without backend modifications.
+    \item \textbf{Adaptability}: frontend dialogs can request new products by varying \texttt{kind} and options on the macro methods rather than depending on bespoke public helpers;
     
-    \item \textbf{Maintainability}: Each API method has a single, well-defined responsibility, simplifying testing and debugging.
+    \item \textbf{Maintainability}: internal helper refactors do not require public API churn as long as the seven macro methods remain stable;
     
-    \item \textbf{Transparency}: Frontend code explicitly shows the sequence of operations applied to raw data, improving reproducibility and comprehension.
+    \item \textbf{Transparency}: workflows remain explicit because dialogs still sequence configuration, loading, extraction, transformation, rendering, and export operations in a reproducible order.
 \end{itemize}
 
 \subsection{Implementation Status and Functional Scope}
@@ -221,17 +219,20 @@ The typical workflow when a user interacts with \cwv involves the following sequ
     
     \item \textbf{Dialog activation}: When a user opens a dialog (\eg "Compare Simulation vs.\ Observation"), the dialog retrieves the shared \hydrot\ instance.
     
-    \item \textbf{API calls}: The dialog invokes \hydrot\ API methods to extract, transform, and analyze data:
+    \item \textbf{API calls}: The dialog invokes the canonical \hydrot\ macro API to describe the available state, extract the requested data product, transform it when needed, and then render or export the result:
     \begin{verbatim}
-sim_data = hydro_twin.extract_values(
-    compartment='HYD', 
-    variable='discharge', 
-    date_range=('2010-01-01', '2015-12-31')
+catalog = hydro_twin.describe(kind="compartments")
+sim_data = hydro_twin.extract(
+    kind="timeseries",
+    compartment="HYD",
+    variable="discharge",
 )
-obs_data = hydro_twin.read_observations(
-    variable='discharge', 
-    location='station_123'
+obs_data = hydro_twin.extract(
+    kind="observations",
+    variable="discharge",
+    location="station_123",
 )
+figure = hydro_twin.render(kind="sim_obs_interactive", sim=sim_data, obs=obs_data)
     \end{verbatim}
     
     \item \textbf{Rendering}: Processed data are converted to QGIS-compatible formats (vector layers, plots) and displayed in the GUI.
@@ -314,28 +315,34 @@ A critical design decision was establishing clear conventions for data formats a
 
 This format separation principle is codified in backend architecture guidelines and enforced through code review.
 
-\subsection{Composability over Monolithic APIs}
+\subsection{Canonical Macro API over Transitional Helpers}
 
-Early design iterations included high-level API methods for specific analyses (\eg \texttt{compute\_regime()}, \texttt{compare\_sim\_obs()}). However, this approach led to API proliferation and reduced flexibility:
+Early design iterations included both highly specialized analysis methods and transitional public helpers. This approach led to API proliferation and reduced flexibility:
 
 \begin{itemize}
-    \item Each new analysis type required a new API method
+    \item Each new analysis type required a new public helper
     \item Similar operations (\eg monthly mean vs.\ annual mean) were implemented redundantly
-    \item Frontend code could not easily adapt or extend analyses without backend modifications
+    \item Frontend code could drift toward internal delegation details instead of a stable backend contract
 \end{itemize}
 
-The current design instead provides a minimal set of composable primitives. High-level analyses are implemented in frontend dialogs by chaining these primitives. For example, hydrological regime computation combines:
+The current design instead consolidates public usage around the seven macro methods. High-level analyses are still expressed as explicit sequences, but they are routed through the canonical entrypoints rather than legacy compatibility wrappers. For example, hydrological regime computation becomes:
 
 \begin{verbatim}
-data = hydro_twin.extract_values(compartment, variable, date_range)
-regime = hydro_twin.apply_temporal_operator(
-    data, 
-    operator='monthly_mean', 
-    groupby='month_of_year'
+data = hydro_twin.extract(
+    kind="timeseries",
+    compartment=compartment,
+    variable=variable,
+    date_range=date_range,
+)
+regime = hydro_twin.transform(
+    kind="temporal_aggregate",
+    source=data,
+    operator="monthly_mean",
+    groupby="month_of_year",
 )
 \end{verbatim}
 
-This design reflects the architectural philosophy that backend infrastructure should provide data transformation capabilities, not complete analysis workflows.
+The same migration rule applies to the helpers removed during the alpha-series cleanup: spatial-map builders move to \texttt{extract(kind="spatial\_map")}, aquifer outcropping moves to \texttt{extract(kind="aquifer\_outcropping")}, and simulation-observation plotting moves to \texttt{render(kind="sim\_obs\_pdf")} or \texttt{render(kind="sim\_obs\_interactive")}.
 
 \subsection{Vec\_Operator: Pure Computational Layer}
 
@@ -435,8 +442,8 @@ Observation data (\eg piezometric heads, discharge measurements) are stored in t
 Observations are exposed through the same API as simulations, enabling transparent comparison:
 
 \begin{verbatim}
-sim = hydro_twin.extract_values('HYD', 'discharge', dates)
-obs = hydro_twin.read_observations('discharge', 'station_X')
+sim = hydro_twin.extract(kind="timeseries", compartment="HYD", variable="discharge", date_range=dates)
+obs = hydro_twin.extract(kind="observations", variable="discharge", location="station_X")
 \end{verbatim}
 
 \subsection{Configuration and Project Structure}
@@ -517,7 +524,7 @@ This vision aligns with the broader \hydrot\ philosophy: establishing a new epis
 
 \section{Summary}
 
-This chapter has documented the current state of \hydrot\ as the backend infrastructure for \cwv. The integration demonstrates how theoretical architectural principles (\ie space-state ontology, \texttt{GitSynchroRecord} provenance, composable APIs) are operationalized in production environments.
+This chapter has documented the current state of \hydrot\ as the backend infrastructure for \cwv. The integration demonstrates how theoretical architectural principles (\ie space-state ontology, \texttt{GitSynchroRecord} provenance, and a stable canonical macro API) are operationalized in production environments.
 
 Key achievements include:
 

@@ -52,10 +52,10 @@ In contrast, the full \hydrot\ target still includes private-key authentication,
 
 The public repository is distributed independently from the QGIS plugin under the package name \texttt{hydrological\_twin\_alpha\_series}. The package is installed as a normal Python dependency and then consumed by \cwv\ through an editable install from a checked-out repository or submodule.
 
-This is an important evolution with respect to the earlier embedded prototype: the backend is no longer documented as an internal \texttt{cawaqsviz.ht} subpackage. It is now a standalone backend package whose public import surface is:
+This is an important evolution with respect to the earlier embedded prototype: the backend is no longer documented as an internal \texttt{cawaqsviz.ht} subpackage. It is now a standalone backend package whose documented public import surface is the canonical package entrypoint:
 
 \begin{verbatim}
-from hydrological_twin_alpha_series import (
+from HydrologicalTwinAlphaSeries import (
     ConfigGeometry,
     ConfigProject,
     HydrologicalTwin,
@@ -91,19 +91,22 @@ src/hydrological_twin_alpha_series/
 This organization is conceptually consistent with \hydrot\:
 \begin{itemize}
     \item the package root retains the domain objects and legacy scientific operators;
-    \item the \texttt{ht} subpackage isolates the monolithic \texttt{HydrologicalTwin} façade and its typed responses;
+    \item the internal \texttt{ht} subpackage isolates the monolithic \texttt{HydrologicalTwin} façade and its private delegation paths;
     \item configuration and utility concerns remain separated from the façade itself.
 \end{itemize}
 
+The repository still contains internal modules and historical scientific operators, but the White Book now treats only the canonical monolithic class and its seven macro methods as supported public API. Transitional wrappers and deleted helper shims are not part of the intended user contract.
+
 \subsection{Backend façade}
 
-The central public class is now \texttt{HydrologicalTwin}, exported both from \texttt{hydrological\_twin\_alpha\_series.ht} and from the package top level:
+The central public class is now \texttt{HydrologicalTwin}, documented from the canonical package entrypoint:
 
 \begin{verbatim}
-from hydrological_twin_alpha_series import HydrologicalTwin
+from HydrologicalTwinAlphaSeries import HydrologicalTwin
 \end{verbatim}
 
-The class inherits from \texttt{HTPersistenceMixin} and is explicitly documented in the code as the monolithic backend façade for \cwv. Its class-level documentation still follows the six-layer ontology of \hydrot\, which confirms the conceptual continuity between the alpha package and the White Book architecture.
+The class remains the monolithic backend façade for \cwv. Internally it still delegates to the historical CaWaQS operators, but the public contract is now expressed through the canonical seven-method macro API:
+\texttt{configure}, \texttt{load}, \texttt{describe}, \texttt{extract}, \texttt{transform}, \texttt{render}, and \texttt{export}. This preserves the six-layer ontology of \hydrot\ while removing the earlier transitional public helper surface.
 
 % --------------------------------------------------------------
 
@@ -114,7 +117,7 @@ The class inherits from \texttt{HTPersistenceMixin} and is explicitly documented
 The minimal public construction pattern currently documented by the repository is the following:
 
 \begin{verbatim}
-from hydrological_twin_alpha_series import (
+from HydrologicalTwinAlphaSeries import (
     ConfigGeometry,
     ConfigProject,
     HydrologicalTwin,
@@ -133,46 +136,53 @@ twin = HydrologicalTwin(
 
 The constructor stores the geometry and project configuration, output and observation roots, an optional temporary directory, and optional metadata. It also instantiates the service objects reused from the CaWaQS scientific stack:\ \texttt{Manage.Temporal()}, \texttt{Manage.Spatial()}, and \texttt{Manage.Budget()}.
 
-\subsection{Typed accessors}
+\subsection{Canonical seven-method macro API}
 
-The alpha façade now exposes typed accessors that align well with the object-oriented decomposition advocated for \hydrot\:
-
-\begin{itemize}
-    \item \texttt{list\_compartments()} and \texttt{get\_compartment\_info()} for compartment metadata,
-    \item \texttt{get\_layer\_info()} and \texttt{get\_all\_layers()} for mesh-layer inspection,
-    \item \texttt{get\_observation\_info()} for observation metadata,
-    \item response classes such as \texttt{CompartmentInfo}, \texttt{LayerInfo}, \texttt{ObservationInfo}, \texttt{ExtractValuesResponse}, and \texttt{ObservationsResponse} defined in \texttt{ht/api\_types.py}.
-\end{itemize}
-
-This is an important clarification for the documentation: the current public alpha implementation is not centred on a \texttt{HydroTwinAlpha} class returning loosely structured dictionaries. It is centred on a \texttt{HydrologicalTwin} façade returning explicit typed containers.
-
-\subsection{Data and estimation operations}
-
-The currently implemented public methods cover the core read-only workflows required by \cwv\ and remain compatible with the conceptual layers of \hydrot\:
+The documented public surface is now intentionally narrow. User-facing workflows are expressed through seven macro entrypoints:
 
 \begin{itemize}
-    \item \texttt{extract\_values(...)} for simulation extraction as NumPy arrays and aligned dates,
-    \item \texttt{read\_observations(...)} for observation loading,
-    \item \texttt{read\_sim\_steady(...)} and \texttt{read\_obs\_steady(...)} for steady-state workflows,
-    \item \texttt{compute\_performance\_stats(...)} for public estimation and comparison metrics.
+    \item \texttt{configure}: register project configuration, runtime options, and access mode;
+    \item \texttt{load}: materialize the twin state from declared inputs and cached artefacts;
+    \item \texttt{describe}: inspect available compartments, layers, variables, observations, and loaded resources;
+    \item \texttt{extract}: retrieve normalized scientific products such as time series, spatial maps, observations, and aquifer outcropping subsets;
+    \item \texttt{transform}: apply temporal, spatial, budget, or statistical operators to extracted products;
+    \item \texttt{render}: create public-facing visualizations, including simulation-observation plots;
+    \item \texttt{export}: persist canonical outputs such as CSV tables, figures, reports, or cache artefacts.
 \end{itemize}
 
-A representative extraction call is:
+These macro methods are the only operations that should be used in user-guide examples. Legacy transition helpers such as \texttt{register\_compartment}, \texttt{describe\_api\_facade}, \texttt{build\_*\_gdf}, and direct \texttt{render\_sim\_obs\_*} helpers are no longer documented as public API.
+
+A representative public workflow is therefore:
 
 \begin{verbatim}
-response = twin.extract_values(
-    id_compartment=1,
-    outtype="FLOW",
-    param="RIV",
-    syear=2000,
-    eyear=2001,
-    id_layer=0,
-    cutsdate="2000-09-01",
-    cutedate="2001-07-31",
-)
+twin.configure(config_geom=config_geom, config_proj=config_proj)
+twin.load(kind="public_backend")
+summary = twin.describe(kind="compartments")
+series = twin.extract(kind="timeseries", compartment="HYD", variable="discharge")
+regime = twin.transform(kind="temporal_aggregate", source=series, operator="monthly_mean")
+figure = twin.render(kind="sim_obs_pdf", source=regime)
+twin.export(kind="csv", source=regime, destination="/path/to/regime.csv")
 \end{verbatim}
 
-The response is a typed object carrying extracted data, the associated date axis, and metadata. This keeps the public API compact while making the backend outputs reusable by QGIS dialogs, scripts, and future service layers.
+This documentation change is important: the current public alpha implementation is no longer presented as a collection of transitional helper calls. It is centred on a single \texttt{HydrologicalTwin} façade whose canonical macro API stabilizes the backend contract for \cwv, scripts, and future services.
+
+\subsection{Migration from deleted helper methods}
+
+The final cleanup of the alpha repository removed several public transition helpers while keeping their behaviour available behind the canonical macro API. The corresponding migration guidance is:
+
+\begin{center}
+\begin{tabular}{p{0.33\textwidth} p{0.55\textwidth}}
+\textbf{Legacy helper usage} & \textbf{Canonical replacement} \\
+\hline
+Spatial maps and \texttt{build\_*\_gdf} wrappers & \texttt{extract(kind="spatial\_map", ...)} \\
+Aquifer outcropping helper & \texttt{extract(kind="aquifer\_outcropping", ...)} \\
+Simulation-observation PDF rendering & \texttt{render(kind="sim\_obs\_pdf", ...)} \\
+Simulation-observation interactive rendering & \texttt{render(kind="sim\_obs\_interactive", ...)} \\
+Ad hoc API-surface description helpers & \texttt{describe(kind=..., ...)} \\
+\end{tabular}
+\end{center}
+
+This migration rule is intentionally simple: all remaining internal delegation paths stay inside the class, while the documented user surface remains the seven-method canonical API.
 
 % --------------------------------------------------------------
 
@@ -180,14 +190,14 @@ The response is a typed object carrying extracted data, the associated date axis
 
 \subsection{Lightweight public provenance and pickle-based persistence}\label{p2c2_ssGitRec}
 
-The standalone package currently provides a lightweight public reproducibility mechanism through \texttt{HTPersistenceMixin}:
+The standalone package currently provides a lightweight public reproducibility mechanism aligned with the canonical macro workflow:
 
 \begin{verbatim}
-twin.to_pickle("/path/to/cache/twin_snapshot.pkl")
-twin = HydrologicalTwin.from_pickle("/path/to/cache/twin_snapshot.pkl")
+twin.export(kind="pickle", destination="/path/to/cache/twin_snapshot.pkl")
+twin.load(kind="pickle", source="/path/to/cache/twin_snapshot.pkl")
 \end{verbatim}
 
-The persisted payload contains a schema version, the class name, and the serialized backend object. This is intentionally lighter than the target \texttt{GitSynchroRecord}-centred registry of the full \hydrot\ architecture, but it still supports reproducible public workflows, bancarisation, and fast session recovery.
+The persisted payload remains intentionally lighter than the target \texttt{GitSynchroRecord}-centred registry of the full \hydrot\ architecture, but it still supports reproducible public workflows, bancarisation, and fast session recovery.
 
 \subsection{Interpretation within the White Book}
 
@@ -229,6 +239,6 @@ In other words, the public alpha repository now makes explicit in code what the 
 
 \section{Conclusion}
 
-The publication of \texttt{HydrologicalTwinAlphaSeries} clarifies the implementation trajectory of \hydrot. The public alpha series is now a standalone Python backend package exposing a \texttt{HydrologicalTwin} façade, typed API responses, and lightweight persistence, while preserving conceptual continuity with the six-layer \hydrot\ architecture.
+The publication of \texttt{HydrologicalTwinAlphaSeries} clarifies the implementation trajectory of \hydrot. The public alpha series is now a standalone Python backend package exposing a canonical \texttt{HydrologicalTwin} façade organized around the seven macro methods \texttt{configure}, \texttt{load}, \texttt{describe}, \texttt{extract}, \texttt{transform}, \texttt{render}, and \texttt{export}, while preserving conceptual continuity with the six-layer \hydrot\ architecture.
 
 This update therefore replaces the earlier description of an embedded \texttt{HydroTwin.py} prototype by a more accurate picture: \texttt{HydrologicalTwinAlphaSeries} is the current public implementation branch of \hydrot\ for \cwv\ and related frontends, whereas the complete \hydrot\ target remains the authenticated, calibration-capable digital twin framework described in the rest of this White Book.

@@ -104,284 +104,86 @@ They are not exposed to the GUI. All access goes through explicit methods on \te
 
 \section{HydrologicalTwin Backend API}
 
-The HT API consists of the public methods of the \texttt{HydrologicalTwin} class.  
-Each method is a thin wrapper around existing domain logic.
+The HT API is now documented around the canonical seven-method public contract of the monolithic \texttt{HydrologicalTwin} class:
+\texttt{configure}, \texttt{load}, \texttt{describe}, \texttt{extract}, \texttt{transform}, \texttt{render}, and \texttt{export}. These methods define the supported user-facing surface for \cwv\ and external scripts; internal delegation to historical CaWaQS operators remains an implementation detail.
 
-\subsection{\texttt{extract\_values(...)}}
-
-\textbf{Purpose:}  
-Read CaWaQS binary outputs, build a time-series DataFrame, and optionally write a CSV.
-
-\textbf{Implementation:}
-\begin{itemize}
-    \item Retrieve or build the compartment:
-    \begin{verbatim}
-comp = self.get_compartment(id_compartment)
-    \end{verbatim}
-
-    \item Call:
-    \begin{verbatim}
-temporal.readSimData(...)
-    \end{verbatim}
-
-    \item Convert to DataFrame:
-    \begin{verbatim}
-temporal.simMatrixToDf(...)
-    \end{verbatim}
-
-    \item Optionally write a tab-separated CSV.
-\end{itemize}
-
-The method returns an \texttt{ExtractValuesResponse} containing:
-\begin{itemize}
-    \item the DataFrame,
-    \item the CSV path (if written),
-    \item metadata.
-\end{itemize}
-
-\subsection{\texttt{apply\_temporal\_operator(...)}}
+\subsection{\texttt{configure(...)} and \texttt{load(...)}}
 
 \textbf{Purpose:}  
-Apply temporal aggregation (annual mean, monthly sum, quantiles, etc.).
+Initialize the twin with project geometry, project configuration, access mode, and data roots, then materialize the working state from declared inputs or serialized artefacts.
 
-It wraps:
-\begin{verbatim}
-Manage.Temporal.aggregate_matrix(...)
-\end{verbatim}
+\textbf{Implementation principle:}
+\begin{itemize}
+    \item \texttt{configure(...)} records the deterministic runtime context and access settings.
+    \item \texttt{load(...)} performs the actual state construction, including public data loading, cache restoration, or future authenticated state hydration.
+\end{itemize}
 
-The GUI provides the DataFrame to aggregate, typically produced by \texttt{extract\_values()}.
-
-\subsection{\texttt{compute\_mass\_balance(...)}}
+\subsection{\texttt{describe(...)}}
 
 \textbf{Purpose:}  
-Compute interannual budgets and mass balances.
+Expose controlled metadata about compartments, layers, observations, variables, and currently loaded resources without requiring direct access to internal domain objects.
 
-Wraps:
-\begin{verbatim}
-Manage.Budget.calcInteranualBVariable(...)
-\end{verbatim}
-
-Returns a \texttt{MassBalanceResponse}.
-
-\subsection{\texttt{apply\_spatial\_operator(...)}}
-
-Provides a unified spatial API.
-
+\textbf{Implementation principle:}
 \begin{itemize}
-    \item \texttt{operator = 'catchment\_cells'}  
-    Wraps \texttt{Manage.Spatial.getCatchmentCellsIds(...)}  
-    Returns a DataFrame with \texttt{id\_cell}.
-
-    \item \texttt{operator = 'aquifer\_outcropping'}  
-    Wraps \texttt{Manage.Spatial.buildAqOutcropping(...)}  
-    Returns a DataFrame with \texttt{id\_abs}.
+    \item Metadata requests are normalized through \texttt{describe(kind=..., ...)}.
+    \item Earlier API-surface description helpers are intentionally not part of the public contract anymore.
 \end{itemize}
 
-\subsection{\texttt{self\_fitting(...)}}
+\subsection{\texttt{extract(...)}}
 
 \textbf{Purpose:}  
-Execute automated parameter calibration with full provenance tracking and private-key authentication.
+Retrieve normalized scientific products from the backend while keeping extraction semantics stable across frontend consumers.
 
-\textbf{Access Control:}  
-This method requires:
+\textbf{Representative extraction kinds:}
 \begin{itemize}
-    \item Successful twin instantiation with certified reproducibility
-    \item Valid private-key authentication
-    \item Access to registered observation datasets
+    \item \texttt{kind="timeseries"} for simulation values and aligned dates;
+    \item \texttt{kind="observations"} for observation retrieval;
+    \item \texttt{kind="spatial\_map"} for canonical spatial products previously exposed through dedicated \texttt{build\_*\_gdf} helpers;
+    \item \texttt{kind="aquifer\_outcropping"} for aquifer outcropping products.
 \end{itemize}
 
-\textbf{Method Signature:}
+\subsection{\texttt{transform(...)}}
 
-\begin{verbatim}
-def self_fitting(
-    self,
-    target_observations: List[ObservationSet],
-    parameters_to_calibrate: List[ParameterDescriptor],
-    optimization_algorithm: str,
-    convergence_criteria: Dict[str, float],
-    private_key: str,
-    **algorithm_kwargs
-) -> CalibrationResult:
-\end{verbatim}
+\textbf{Purpose:}
+Apply temporal, spatial, budget, and statistical operators to extracted products.
 
-\textbf{Parameters:}
-
+\textbf{Implementation principle:}
 \begin{itemize}
-    \item \texttt{target\_observations}: List of observation sets with spatial locations, values, and uncertainties
-    \item \texttt{parameters\_to\_calibrate}: Structured parameter specifications including priors and constraints
-    \item \texttt{optimization\_algorithm}: Selection of optimization method (\texttt{'gradient\_descent'}, \texttt{'mcmc'}, \texttt{'temporal\_bayesian\_inference'}, \texttt{'enkf'}, \texttt{'pso'}, \texttt{'multi\_stage\_bayesian'})
-    \item \texttt{convergence\_criteria}: Dictionary with \texttt{max\_iterations}, \texttt{tolerance}, \texttt{objective\_function\_value}
-    \item \texttt{private\_key}: Cryptographic key for authentication
-    \item \texttt{algorithm\_kwargs}: Algorithm-specific parameters (learning rate, ensemble size, MCMC chains, workflow stages, etc.)
+    \item Internal calls may still reuse \texttt{Manage.Temporal}, \texttt{Manage.Budget}, \texttt{Manage.Spatial}, and \texttt{Vec\_Operator}.
+    \item The public documentation no longer exposes separate transitional helpers such as \texttt{apply\_temporal\_operator(...)} or \texttt{apply\_spatial\_operator(...)}.
 \end{itemize}
 
-\textbf{Return Value:}
+\subsection{\texttt{render(...)} and \texttt{export(...)}}
 
-Returns a \texttt{CalibrationResult} object containing:
+\textbf{Purpose:}
+Produce user-facing visualizations and persist reproducible artefacts.
+
+\textbf{Implementation principle:}
 \begin{itemize}
-    \item \texttt{calibrated\_twin}: New \hydrot\ instance with optimized parameters
-    \item \texttt{parameter\_evolution}: DataFrame tracking parameter values across iterations
-    \item \texttt{objective\_function\_history}: Array of objective function values
-    \item \texttt{convergence\_diagnostics}: Convergence test results and diagnostic plots
-    \item \texttt{validation\_metrics}: Dictionary with RMSE, Nash-Sutcliffe efficiency, and other fit metrics
-    \item \texttt{posterior\_distribution}: (Optional) Posterior samples for Bayesian methods
-    \item \texttt{registry\_fingerprint}: Unique identifier for this calibration session
+    \item \texttt{render(...)} centralizes public-facing visualizations, including \texttt{kind="sim\_obs\_pdf"} and \texttt{kind="sim\_obs\_interactive"}.
+    \item \texttt{export(...)} centralizes serialization and output generation (CSV, figures, reports, snapshots).
 \end{itemize}
 
-\textbf{Implementation Architecture:}
+\subsection{Migration rule for deleted helpers}
 
-The method is implemented as a façade that coordinates multiple backend components:
-
-\begin{enumerate}
-    \item \textbf{Authentication layer}:
-    \begin{verbatim}
-auth_manager.validate_key(private_key)
-auth_manager.log_calibration_event(user_id, timestamp)
-    \end{verbatim}
-
-    \item \textbf{Observation extraction}:
-    \begin{verbatim}
-obs_layer = self.estimation_layer.get_observations()
-target_values = obs_layer.extract_at_locations(
-    target_observations
-)
-    \end{verbatim}
-
-    \item \textbf{Optimization loop}:
-    \begin{verbatim}
-optimizer = OptimizationFactory.create(
-    algorithm=optimization_algorithm,
-    **algorithm_kwargs
-)
-while not optimizer.has_converged(convergence_criteria):
-    params = optimizer.propose_parameters()
-    sim_twin = self.create_variant(params)
-    sim_values = sim_twin.extract_at_locations(
-        target_observations
-    )
-    objective = compute_mismatch(sim_values, target_values)
-    optimizer.update(objective)
-    registry.append(sim_twin, objective, timestamp)
-    \end{verbatim}
-
-    \item \textbf{Result instantiation}:
-    \begin{verbatim}
-optimal_params = optimizer.get_best_parameters()
-calibrated_twin = HydrologicalTwin(
-    config=self.config.with_parameters(optimal_params),
-    private_key=private_key,
-    parent_fingerprint=self.registry_fingerprint
-)
-return CalibrationResult(
-    calibrated_twin=calibrated_twin,
-    diagnostics=optimizer.get_diagnostics()
-)
-    \end{verbatim}
-\end{enumerate}
-
-\textbf{Registry Integration:}
-
-Each calibration session is recorded in the universal Git registry with:
-\begin{itemize}
-    \item Session UUID linking all calibration iterations
-    \item Initial twin fingerprint (starting configuration)
-    \item Final twin fingerprint (calibrated configuration)
-    \item Complete parameter evolution trajectory
-    \item Objective function evaluations with timestamps
-    \item Authenticated user identity and cryptographic signature
-    \item Observation dataset fingerprints used as calibration targets
-\end{itemize}
-
-\textbf{Provenance Chain:}
-
-The calibrated twin maintains bidirectional linkage:
-\begin{verbatim}
-calibrated_twin.provenance = {
-    'parent_twin': self.registry_fingerprint,
-    'calibration_session': session_uuid,
-    'method': 'self_fitting',
-    'algorithm': optimization_algorithm,
-    'observation_datasets': [obs.fingerprint for obs in targets],
-    'user': auth_manager.get_user_id(private_key),
-    'timestamp': datetime.now(timezone.utc).isoformat()
-}
-\end{verbatim}
-
-\textbf{Integration with Estimation Layer:}
-
-The \texttt{self\_fitting()} method delegates computational tasks to the Estimation Layer:
+The cleanup of \texttt{HydrologicalTwinAlphaSeries} removed several public transition helpers from \texttt{HydrologicalTwin}. The documentation therefore follows a simple migration rule:
 
 \begin{itemize}
-    \item \textbf{Observation management}: \texttt{EstimationLayer.get\_observations()}
-    \item \textbf{Simulation execution}: \texttt{EstimationLayer.run\_simulation(parameters)}
-    \item \textbf{Gradient computation}: \texttt{EstimationLayer.compute\_gradients()} for adjoint methods
-    \item \textbf{Likelihood evaluation}: \texttt{EstimationLayer.evaluate\_likelihood()} for Bayesian inference
-    \item \textbf{Ensemble coordination}: \texttt{EstimationLayer.run\_ensemble()} for EnKF or Monte Carlo
-    \item \textbf{Time-domain Bayesian inference integration}: \texttt{EstimationLayer.run\_temporal\_bayesian\_inference()} for multi-chain MCMC
-    \item \textbf{Frequency-domain calibration}: \texttt{EstimationLayer.run\_frequency\_calibration()} for frequency-domain parameter identification
+    \item spatial-map helpers $\rightarrow$ \texttt{extract(kind="spatial\_map", ...)}
+    \item aquifer outcropping helper $\rightarrow$ \texttt{extract(kind="aquifer\_outcropping", ...)}
+    \item simulation-observation rendering helpers $\rightarrow$ \texttt{render(kind="sim\_obs\_pdf", ...)} or \texttt{render(kind="sim\_obs\_interactive", ...)}
 \end{itemize}
 
-\textbf{Multi-Stage Workflow Support:}
+\subsection{Private estimation workflows}
 
-For complex calibration scenarios requiring integration across multiple physical processes and observation types, the method supports multi-stage workflows:
-
-\begin{verbatim}
-# Multi-stage configuration example
-workflow_config = {
-    'stages': [
-        {
-            'name': 'frequency_domain',
-            'algorithm': 'frequency_calibration',
-            'observations': ['discharge', 'recharge'],
-            'parameters': ['HRU_efficiency', 'rainfall_response']
-        },
-        {
-            'name': 'temporal_recharge',
-            'algorithm': 'temporal_bayesian_inference',
-            'observations': ['recharge_time_series'],
-            'parameters': ['infiltration_params']
-        },
-        {
-            'name': 'hydrogeological_reference',
-            'algorithm': 'frequency_calibration_piezometric',
-            'observations': ['piezometric_heads'],
-            'parameters': ['transmissivity', 'storativity']
-        },
-        {
-            'name': 'bayesian_inversion',
-            'algorithm': 'temporal_bayesian_inference',
-            'observations': ['all'],
-            'parameters': ['conductivity_field', 'storage_field'],
-            'adaptive_mesh': True
-        }
-    ]
-}
-
-result = twin.self_fitting(
-    workflow_stages=workflow_config,
-    private_key=key
-)
-\end{verbatim}
-
-Each stage produces intermediate calibrated twins that are registered with provenance linkage, enabling full traceability from initial frequency-domain analysis through final Bayesian parameter posteriors.
-
-\textbf{Error Handling:}
-
-The method includes comprehensive error checking:
-
-\begin{itemize}
-    \item \textbf{Authentication failures}: Logged and raised as \texttt{AuthenticationError}
-    \item \textbf{Non-convergence}: Logged with partial results and raised as \texttt{ConvergenceWarning}
-    \item \textbf{Simulation failures}: Logged with parameter values and raised as \texttt{SimulationError}
-    \item \textbf{Invalid parameters}: Physical constraints checked before simulation execution
-\end{itemize}
+Advanced calibration and Bayesian inference remain part of the long-term \hydrot\ target architecture, but they are not documented here as additional public alpha-series entrypoints. They are conceptually expressed through authenticated uses of the same monolithic façade, with provenance capture delegated to the Estimation Layer and Git-synchronized registry described elsewhere in this White Book.
 
 \section{Persistence and Bancarisation}
 
-HT inherits from \texttt{HTPersistenceMixin}, which provides:
+HT preserves lightweight persistence for public workflows through the canonical macro API:
 \begin{itemize}
-    \item \texttt{HydrologicalTwin.to\_pickle(path)}
-    \item \texttt{HydrologicalTwin.from\_pickle(path)}
+    \item \texttt{export(kind="pickle", destination=path)}
+    \item \texttt{load(kind="pickle", source=path)}
 \end{itemize}
 
 This enables:
@@ -526,5 +328,4 @@ It reflects the present development state and serves as a reference for ongoing 
     \item Nash--Sutcliffe Efficiency (NSE)
   \end{itemize}
 \end{itemize}
-
 

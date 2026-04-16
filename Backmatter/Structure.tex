@@ -53,10 +53,10 @@ The workflow from QGIS to CaWaQS output is structured to enforce \textbf{access 
     \end{itemize}
 
     \item \textbf{ExploreData Initialization}
-    Upon project load, \texttt{ExploreData.get\_instance()} is called, constructing a \texttt{HydrologicalTwin} instance with the project configuration. The twin's mode (\texttt{public} or \texttt{private}) is set based on the presence of a valid private-key:
+    Upon project load, \texttt{ExploreData.get\_instance()} is called, constructing a \texttt{HydrologicalTwin} instance with the project configuration. The frontend then drives the backend through the canonical macro API:
     \begin{verbatim}
-        twin = HydrologicalTwin(mode="private", key="user_key.pem")  # Private access
-        twin = HydrologicalTwin(mode="public")                       # Public access
+        twin.configure(mode="private", key="user_key.pem")  # Private access
+        twin.load(kind="project_state")
     \end{verbatim}
 
     \item \textbf{HydrologicalTwin Singleton}
@@ -75,7 +75,7 @@ The workflow from QGIS to CaWaQS output is structured to enforce \textbf{access 
         if dialog.requires_private_access and not self.hydro_twin.has_key():
             raise PermissionError("Private-key required for this operation.")
     \end{verbatim}
-    Dialogs call only \texttt{HydrologicalTwin} API methods (e.g., \texttt{extract\_values}, \texttt{apply\_temporal\_operator}).
+    Dialogs call only the canonical \texttt{HydrologicalTwin} macro methods (e.g., \texttt{describe}, \texttt{extract}, \texttt{transform}, \texttt{render}).
 
     \item \textbf{Private-Key Validation}
     For restricted operations (e.g., data extraction, parameter modification), the twin verifies the user's private-key:
@@ -92,11 +92,11 @@ The workflow from QGIS to CaWaQS output is structured to enforce \textbf{access 
     \begin{itemize}
         \item \textbf{Public operations} (e.g., rendering maps):
         \begin{verbatim}
-            data = twin.apply_spatial_mask(request)  # Masked/aggregated data
+            data = twin.extract(kind="spatial_map", request=request)
         \end{verbatim}
         \item \textbf{Private operations} (e.g., raw data extraction):
         \begin{verbatim}
-            data = twin.extract_values(request)      # Requires private-key
+            data = twin.extract(kind="timeseries", request=request)  # Requires private-key
         \end{verbatim}
     \end{itemize}
     Services perform:
