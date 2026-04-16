@@ -38,7 +38,7 @@ This architecture deliberately does not rewrite the existing code base; instead,
 
 \subsection{Package Layout}
 
-The current public alpha implementation is distributed as the standalone package \texttt{hydrological\_twin\_alpha\_series}, intended to be consumed by \texttt{cawaqsviz} through an editable install or submodule checkout. Its relevant backend structure is:
+The current public alpha implementation is distributed from the standalone repository \texttt{HydrologicalTwinAlphaSeries}, intended to be consumed by \texttt{cawaqsviz} through an editable install or submodule checkout. In user-facing examples, the canonical entrypoint is the package root import \texttt{from HydrologicalTwinAlphaSeries import HydrologicalTwin}, even though the internal source tree still follows the layout:
 
 \begin{verbatim}
 src/hydrological_twin_alpha_series/
@@ -80,6 +80,8 @@ The constructor stores these references and instantiates the service layers:
     \item \texttt{Manage.Spatial()}
 \end{itemize}
 
+Within \texttt{HydrologicalTwinAlphaSeries}, this construction logic underpins both the canonical seven-method public workflow (\texttt{configure}, \texttt{load}, \texttt{describe}, \texttt{extract}, \texttt{transform}, \texttt{render}, \texttt{export}) and the broader internal/private method inventory documented below.
+
 \section{Domain Model and Encapsulation}
 
 \subsection{Compartments}
@@ -104,8 +106,7 @@ They are not exposed to the GUI. All access goes through explicit methods on \te
 
 \section{HydrologicalTwin Backend API}
 
-The HT API consists of the public methods of the \texttt{HydrologicalTwin} class.  
-Each method is a thin wrapper around existing domain logic.
+The HT API described in this technical chapter keeps the current method inventory of the \texttt{HydrologicalTwin} class, including methods that belong to private or authenticated workflows such as \texttt{self\_fitting(...)}. This is broader than the canonical seven-method public surface documented elsewhere for \texttt{HydrologicalTwinAlphaSeries}; each method remains a thin wrapper around existing domain logic.
 
 \subsection{\texttt{extract\_values(...)}}
 
@@ -526,5 +527,4 @@ It reflects the present development state and serves as a reference for ongoing 
     \item Nash--Sutcliffe Efficiency (NSE)
   \end{itemize}
 \end{itemize}
-
 

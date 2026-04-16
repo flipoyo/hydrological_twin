@@ -117,7 +117,7 @@ Le backend implémente quatre modèles de conception critiques :
 
 \textbf{Modèle Singleton} : Une seule instance \texttt{HydroTwin} par session QGIS élimine les problèmes de cohérence d'état et fournit un accès cohérent aux données à travers plusieurs dialogues du plugin.
 
-\textbf{API Composable} : Des primitives minimales et orthogonales (extraire, transformer, agréger, rendre) permettent la construction de flux de travail flexibles sans explosion combinatoire de méthodes spécialisées.
+\textbf{API canonique en sept méthodes} : l'interface publique est désormais stabilisée autour de \texttt{configure}, \texttt{load}, \texttt{describe}, \texttt{extract}, \texttt{transform}, \texttt{render} et \texttt{export}, ce qui évite les aides transitoires et clarifie le contrat backend.
 
 \textbf{Séparation des Préoccupations} : Des couches distinctes gèrent l'I/O binaire (Accès aux Données), les opérations NumPy pures (Couche Computationnelle), les statistiques et le bilan de masse (Couche Analyse), et le rendu de visualisation (Couche de Rendu).
 
