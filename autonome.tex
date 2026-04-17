@@ -8,7 +8,6 @@
 \usepackage[a4paper,margin=2.4cm]{geometry}
 \usepackage{xcolor}
 \usepackage{hyperref}
-\usepackage{enumitem}
 \usepackage{booktabs}
 \usepackage{tabularx}
 \usepackage{array}
@@ -33,8 +32,6 @@
 
 \setlength{\parindent}{0pt}
 \setlength{\parskip}{0.75em}
-\setlist[itemize]{leftmargin=1.5em}
-\setlist[enumerate]{leftmargin=1.7em}
 
 \pagestyle{fancy}
 \fancyhf{}
@@ -62,25 +59,15 @@ L'idée centrale est la suivante : \hydrot{} ne remplace pas le modèle physique
 
 \section*{Idées clés dès l'ouverture}
 
-\begin{itemize}
-    \item \important{\hydrot{} est une structure de pilotage} : il sert d'entrée unique pour configurer, charger, décrire, transformer, visualiser et exporter un système hydrologique.
-    \item \important{Le modèle physique reste au centre} : \hydrot{} n'est pas un substitut au modèle, mais la charpente qui le rend réutilisable, compréhensible et extensible.
-    \item \important{Le multi-échelle devient un chemin organisé} : on part d'un jumeau hydrologique global, puis on crée des \texttt{subTwin} locaux sur des domaines masqués ou extraits du domaine initial.
-    \item \important{Chaque échelle conserve son lien avec les autres} : données, hypothèses, provenance logicielle et simulations restent synchronisées.
-    \item \important{La feuille de route est progressive} : série Alpha pour les usages publics de base, série Beta pour la synchronisation et l'extraction privées, puis premier POC complet avec instanciation de \texttt{subTwin}, avant les développements avancés de calibration, d'incertitudes et de gestion des droits.
-\end{itemize}
+\hydrot{} doit être compris comme une structure de pilotage avant d'être perçu comme un simple outil logiciel. Son ambition n'est pas de se substituer au modèle physique, mais de lui donner une charpente capable de tenir ensemble ce que les projets dispersent trop souvent : les données, les simulations, les transformations, les visualisations, les exports, et surtout la mémoire de tout ce qui a conduit à un résultat.
+
+Le point décisif, pour la modélisation multi-échelle, est là. Le passage d'un jumeau global à des \texttt{subTwin} locaux ne relève plus d'un bricolage de fichiers ni d'une succession de copies fragiles ; il devient un chemin organisé, inscrit dans une feuille de route explicite. Chaque échelle peut alors gagner en finesse sans perdre le lien avec les autres, et l'ensemble de la démarche conserve un horizon professionnel, rigoureux, mais aussi suffisamment ample pour faire entrevoir une véritable exploration coordonnée de la ressource en eau.
 
 \tableofcontents
 
 \section{Pourquoi parler de modélisation multi-échelle ?}
 
-La ressource en eau ne se comprend pas à une seule échelle. On a besoin, en même temps, d'une vision large et d'analyses locales.
-
-\begin{itemize}
-    \item À grande échelle, on cherche à comprendre le fonctionnement général d'un bassin, les tendances climatiques, les grands flux, ou les arbitrages entre territoires.
-    \item À échelle intermédiaire, on s'intéresse à un sous-bassin, une nappe, un tronçon de rivière, un ensemble d'ouvrages, ou un secteur de gestion.
-    \item À échelle locale, on veut répondre à des questions très concrètes : impact d'un pompage, fonctionnement d'une zone humide, recharge d'un captage, vulnérabilité d'un aquifère, influence d'un usage particulier.
-\end{itemize}
+La ressource en eau ne se comprend jamais depuis un seul promontoire. Vue de loin, elle dessine les grands mouvements d'un bassin, les tendances climatiques, les flux majeurs et les équilibres territoriaux ; approchée à une échelle intermédiaire, elle révèle les singularités d'une nappe, d'un sous-bassin, d'un tronçon de rivière ou d'un secteur de gestion ; observée enfin au plus près du terrain, elle devient affaire de captage, de zone humide, de pompage, de vulnérabilité locale, d'ouvrage et d'usage. Toute la difficulté est de faire coexister ces regards sans les laisser se séparer.
 
 Le problème classique est que ces échelles sont souvent traitées séparément. On construit un grand modèle pour la vision régionale, puis un autre modèle local pour un besoin précis, avec des fichiers différents, des hypothèses partiellement perdues, des sorties difficilement comparables, et une traçabilité fragile.
 
@@ -88,17 +75,7 @@ Le problème classique est que ces échelles sont souvent traitées séparément
 
 \section{Le point de départ : un modèle physique a besoin d'une structure}
 
-Un modèle hydrologique à base physique est déjà un objet complexe. Il combine au minimum :
-
-\begin{itemize}
-    \item un territoire et son découpage spatial ;
-    \item des forçages météorologiques ;
-    \item des données d'observation ;
-    \item des paramètres ;
-    \item un moteur de calcul ;
-    \item des sorties de simulation ;
-    \item des graphiques, cartes et indicateurs pour interpréter les résultats.
-\end{itemize}
+Un modèle hydrologique à base physique est déjà, en lui-même, une petite expédition scientifique. Il faut un territoire et son découpage spatial, des forçages météorologiques, des données d'observation, des paramètres, un moteur de calcul, des sorties de simulation, puis tout un ensemble de cartes, de graphiques et d'indicateurs capables de donner forme à ce que le calcul a produit.
 
 Dans de nombreux projets, ces éléments existent, mais ils restent dispersés : un répertoire pour les données, un autre pour les scripts, un autre pour les sorties, parfois des traitements manuels, des conventions implicites, et peu de garanties sur ce qui a réellement servi à produire tel résultat.
 
@@ -124,43 +101,19 @@ La classe \texttt{HydrologicalTwin} décrit un cycle de vie explicite :
 \texttt{EMPTY $\rightarrow$ CONFIGURED $\rightarrow$ LOADED $\rightarrow$ READY}
 \end{center}
 
-Pour une personne peu technique, cela se comprend très simplement :
-
-\begin{enumerate}
-    \item \texttt{EMPTY} : le jumeau existe, mais il n'est pas encore renseigné.
-    \item \texttt{CONFIGURED} : on lui a donné sa géométrie, son projet, ses chemins de données, ses options générales.
-    \item \texttt{LOADED} : les données et ressources utiles ont été effectivement chargées.
-    \item \texttt{READY} : le jumeau est prêt pour produire des résultats, des transformations et des visualisations.
-\end{enumerate}
+Pour une personne peu technique, ce cycle se lit presque comme une mise en route. D'abord, le jumeau existe en puissance, encore vide de tout contenu utile ; puis il reçoit sa géométrie, son projet, ses chemins de données et ses options générales ; ensuite viennent le chargement effectif des ressources nécessaires ; enfin, l'ensemble atteint un état de disponibilité où les transformations, les visualisations et les exports peuvent être produits de manière légitime.
 
 Ce point est structurant car il impose une discipline. On ne lance pas n'importe quelle opération n'importe quand. Le jumeau sait dans quel état il se trouve et quelles actions sont légitimes à chaque étape.
 
 \subsection{Des services publics lisibles}
 
-La feuille de route souligne trois services publics de base sur le cycle de vie :
-\texttt{configure}, \texttt{load}, \texttt{describe}.
-
-Une fois le jumeau dans l'état \texttt{READY}, trois grandes familles de services sont mises en avant pour la série Alpha :
-\texttt{transform}, \texttt{render}, \texttt{export}.
-
-On peut résumer cela en langage métier :
-
-\begin{itemize}
-    \item \texttt{configure} : je définis le cadre du système étudié ;
-    \item \texttt{load} : j'ouvre réellement les données et les résultats ;
-    \item \texttt{describe} : je regarde ce que contient le jumeau ;
-    \item \texttt{transform} : je calcule des indicateurs ou des changements d'échelle ;
-    \item \texttt{render} : je produis des cartes, graphiques ou vues interprétables ;
-    \item \texttt{export} : je sors les résultats vers des formats utilisables.
-\end{itemize}
+La feuille de route souligne d'abord trois services publics très lisibles sur le cycle de vie : \texttt{configure}, \texttt{load} et \texttt{describe}. Une fois le jumeau dans l'état \texttt{READY}, la série Alpha met en avant trois autres familles d'action : \texttt{transform}, \texttt{render} et \texttt{export}. En langage métier, la séquence devient presque naturelle : on définit le cadre du système étudié, on ouvre réellement les données et les résultats, on regarde ce que contient le jumeau, on calcule des indicateurs ou des changements d'échelle, on produit des cartes et des vues interprétables, puis on sort les résultats vers des formats utilisables.
 
 Même sans connaissance informatique avancée, cette organisation montre déjà ce qui fait la force de \hydrot{} : le modèle n'est plus seulement un moteur de calcul, il devient un service ordonné.
 
 \section{Pourquoi cette organisation est décisive pour le multi-échelle}
 
-Le multi-échelle ne consiste pas seulement à faire \og plus fin \fg{}. Il consiste à pouvoir passer d'une échelle à l'autre sans perdre le sens des résultats.
-
-Pour cela, il faut au minimum quatre garanties.
+Le multi-échelle ne consiste pas seulement à faire \og plus fin \fg{}. Il consiste à pouvoir passer d'une échelle à l'autre sans perdre le sens des résultats. Pour que ce voyage soit scientifiquement sûr, il faut une référence commune, une capacité d'extraction maîtrisée, la possibilité de relancer ou d'enrichir des simulations locales, et une traçabilité suffisamment robuste pour que chaque niveau demeure lisible depuis l'autre.
 
 \subsection{Garder une référence commune}
 
@@ -190,26 +143,13 @@ Un \texttt{subTwin} peut être compris comme une déclinaison locale du jumeau p
 
 \subsection{Une image simple}
 
-On peut comparer \hydrot{} à un atlas complet de la ressource en eau.
-
-\begin{itemize}
-    \item Le jumeau principal est l'atlas entier : il donne le cadre général.
-    \item Le \texttt{subTwin} est une carte thématique détaillée d'une zone particulière, mais qui reste fabriquée à partir du même atlas et selon les mêmes règles.
-\end{itemize}
+On peut comparer \hydrot{} à un atlas complet de la ressource en eau. Le jumeau principal en serait le volume entier, celui qui donne le cadre général, les continuités, les repères et la géographie d'ensemble. Le \texttt{subTwin}, lui, ressemblerait à une carte détaillée consacrée à une zone particulière : plus précise, plus proche du terrain, mais toujours produite à partir du même atlas et selon les mêmes règles de lecture.
 
 Ce n'est donc ni une simple découpe géographique, ni un modèle indépendant. C'est un objet spécialisé, hérité, renseigné, et potentiellement enrichi.
 
 \subsection{Ce que le \texttt{subTwin} permet concrètement}
 
-Un \texttt{subTwin} permettra de :
-
-\begin{itemize}
-    \item travailler sur un domaine local avec une résolution ou un paramétrage plus adapté ;
-    \item injecter des connaissances plus fines disponibles à l'échelle locale ;
-    \item tester des hypothèses spécifiques à un site, sans perdre le lien avec le cadre régional ;
-    \item comparer plus clairement ce qui relève du comportement général du bassin et ce qui relève d'une singularité locale ;
-    \item construire progressivement une hiérarchie de jumeaux cohérents entre eux.
-\end{itemize}
+Un \texttt{subTwin} permettra ainsi de travailler sur un domaine local avec une résolution ou un paramétrage mieux adaptés, d'y injecter des connaissances plus fines disponibles à l'échelle du site, de tester des hypothèses particulières sans rompre le lien avec le cadre régional, de mieux distinguer ce qui relève du comportement général du bassin de ce qui appartient à une singularité locale, et, au fil du temps, de construire une hiérarchie cohérente de jumeaux qui se répondent.
 
 \subsection{Pourquoi c'est structurant}
 
@@ -219,7 +159,7 @@ Avec \hydrot{}, le passage au local devient une fonctionnalité pensée dans l'a
 
 \section{De la série Alpha au multi-échelle complet : lecture de la feuille de route}
 
-La feuille de route de la classe \texttt{HydrologicalTwin} est particulièrement claire. Elle peut être reformulée en quatre étapes simples.
+La feuille de route de la classe \texttt{HydrologicalTwin} est particulièrement claire. Elle peut se lire comme une traversée en quatre temps, où chaque étape prépare la suivante sans brûler les ponts.
 
 \subsection{Étape 1 -- Alpha : rendre le jumeau manipulable}
 
@@ -229,16 +169,7 @@ Cette étape peut sembler modeste, mais elle est fondamentale : avant de raffine
 
 \subsection{Étape 2 -- Beta : préparer la navigation contrôlée}
 
-La transition Alpha-Beta est décrite comme le développement de méthodes privées de synchronisation Git et d'extraction.
-
-C'est une étape charnière. Pour faire du multi-échelle sérieusement, il faut savoir :
-
-\begin{itemize}
-    \item identifier exactement les données et codes utilisés ;
-    \item naviguer dans les différents états d'un projet ;
-    \item extraire une partie pertinente du système sans rompre la cohérence ;
-    \item garantir que l'on peut retrouver l'origine d'un résultat local.
-\end{itemize}
+La transition Alpha-Beta est décrite comme le développement de méthodes privées de synchronisation Git et d'extraction. C'est une étape charnière. Pour faire du multi-échelle sérieusement, il faut pouvoir identifier exactement les données et les codes mobilisés, naviguer dans les différents états d'un projet, extraire une partie pertinente du système sans rompre la cohérence et, surtout, retrouver sans ambiguïté l'origine d'un résultat local.
 
 La synchronisation dans le continuum space-state apporte cette mémoire du système. Elle donne au multi-échelle sa colonne vertébrale documentaire et scientifique.
 
@@ -246,28 +177,13 @@ La synchronisation dans le continuum space-state apporte cette mémoire du syst�
 
 La transition Beta vers le premier POC complet est explicitement dédiée à la création de \texttt{subTwin}. C'est le moment où \hydrot{} devient réellement un outil de modélisation multi-échelle.
 
-Le principe annoncé est fort : initialiser un sous-jumeau à partir d'une simulation du jumeau originel, mais seulement sur l'extraction locale pertinente, dans un domaine masqué.
-
-Cela signifie plusieurs choses.
-
-\begin{enumerate}
-    \item Le modèle global fournit le contexte et les conditions héritées.
-    \item Le domaine local n'est pas défini arbitrairement ; il est extrait du jumeau parent.
-    \item Le \texttt{subTwin} peut recevoir ses propres simulations, adaptées au problème local.
-    \item Le lien parent-enfant entre jumeaux reste explicite.
-\end{enumerate}
+Le principe annoncé est fort : initialiser un sous-jumeau à partir d'une simulation du jumeau originel, mais seulement sur l'extraction locale pertinente, dans un domaine masqué. Cela veut dire que le modèle global fournit le contexte et les conditions héritées, que le domaine local n'est pas défini arbitrairement mais extrait du jumeau parent, que le \texttt{subTwin} peut ensuite recevoir ses propres simulations adaptées au problème rencontré, et que le lien parent-enfant entre jumeaux reste toujours explicite.
 
 On passe alors d'une simple visualisation multi-échelle à une véritable modélisation multi-échelle par instanciation.
 
 \subsection{Étape 4 -- Après le premier POC : monter en maturité scientifique}
 
-La feuille de route mentionne ensuite trois grands développements privés :
-
-\begin{enumerate}
-    \item un cadre bayésien pour l'auto-ajustement et la quantification des incertitudes, avec gestion de multiples instances de jumeaux en parallèle ;
-    \item l'amélioration de la procédure de \texttt{self\_fitting} avec analyse fréquentielle dans un ajustement pas à pas ;
-    \item la gestion des droits, de la propriété intellectuelle et de la certification de l'originalité des jumeaux et de leurs composants, avec suivi de leur évolution dans le continuum space-state.
-\end{enumerate}
+La feuille de route mentionne ensuite trois grands développements privés : un cadre bayésien pour l'auto-ajustement et la quantification des incertitudes, avec gestion parallèle de multiples instances de jumeaux ; l'amélioration de la procédure de \texttt{self\_fitting} par une analyse fréquentielle conduite pas à pas ; enfin, la gestion des droits, de la propriété intellectuelle et de la certification de l'originalité des jumeaux et de leurs composants, avec suivi de leur évolution dans le continuum space-state.
 
 Ces trois axes prolongent directement la logique multi-échelle. Dès qu'on dispose de plusieurs jumeaux et sous-jumeaux, il faut pouvoir comparer, calibrer, quantifier les écarts, gérer les versions et protéger la valeur produite.
 
@@ -277,14 +193,7 @@ Pour un gestionnaire de bassin, un hydrogéologue, un ingénieur d'études ou un
 
 \subsection{Un langage d'action plus simple}
 
-Au lieu de demander : \og Où sont les fichiers de simulation ? Quelle est la bonne version ? Qui a modifié tel paramètre ? Quel script produit cette carte ? \fg{}, on dispose d'un objet qui organise les opérations.
-
-Le bénéfice est double :
-
-\begin{itemize}
-    \item le travail est plus lisible ;
-    \item les résultats sont plus crédibles car leur origine est mieux documentée.
-\end{itemize}
+Au lieu de demander : \og Où sont les fichiers de simulation ? Quelle est la bonne version ? Qui a modifié tel paramètre ? Quel script produit cette carte ? \fg{}, on dispose d'un objet qui organise les opérations. Le travail devient plus lisible, mais surtout les résultats gagnent en crédibilité parce que leur origine, leur chemin de fabrication et leur place dans l'ensemble sont mieux documentés.
 
 \subsection{Une montée en finesse sans rupture}
 
@@ -300,32 +209,7 @@ Ainsi, \hydrot{} donne une place plus claire à l'expertise métier dans la cha�
 
 \section{Exemple concret de trajectoire multi-échelle}
 
-Prenons un exemple simple.
-
-\subsection{Niveau 1 : le jumeau de bassin}
-
-On construit un \hydrot{} sur un grand territoire. Il intègre les simulations existantes, les observations régionales, la structure spatiale du bassin et les sorties utiles pour la visualisation. Ce jumeau sert à décrire le comportement général de la ressource en eau.
-
-\subsection{Niveau 2 : extraction d'un sous-secteur}
-
-Une zone présente un enjeu particulier : baisse piézométrique, tension quantitative, sensibilité écologique ou projet d'aménagement. À partir du jumeau principal, on extrait un domaine local cohérent.
-
-\subsection{Niveau 3 : création d'un \texttt{subTwin}}
-
-Le \texttt{subTwin} est alors instancié sur cette zone. Il hérite du contexte utile du parent, puis reçoit des simulations dédiées à l'échelle locale. On peut y intégrer un maillage plus fin, davantage de données locales, voire des hypothèses plus ciblées.
-
-\subsection{Niveau 4 : comparaison et retour d'expérience}
-
-Les résultats locaux peuvent ensuite être comparés au jumeau parent :
-
-\begin{itemize}
-    \item pour vérifier la cohérence d'ensemble ;
-    \item pour repérer les zones où le modèle global est suffisant ;
-    \item pour identifier les secteurs où un raffinement structurel améliore réellement la compréhension ;
-    \item pour préparer des stratégies de calibration ou d'incertitude mieux ciblées.
-\end{itemize}
-
-On obtient ainsi une architecture en cascade, où les échelles ne s'opposent pas mais se complètent.
+Prenons un exemple simple. On construit d'abord un \hydrot{} sur un grand territoire, avec ses simulations existantes, ses observations régionales, sa structure spatiale et les sorties utiles à la visualisation ; ce premier jumeau donne le paysage général de la ressource en eau. Puis une zone particulière se détache, parce qu'elle concentre une tension quantitative, une baisse piézométrique, une sensibilité écologique ou un projet d'aménagement. À partir du jumeau principal, on en extrait un domaine local cohérent. Le \texttt{subTwin} est alors instancié sur cette zone : il hérite du contexte utile du parent, puis reçoit des simulations dédiées à l'échelle locale, éventuellement enrichies par un maillage plus fin, des données supplémentaires ou des hypothèses plus ciblées. Les résultats obtenus peuvent enfin être confrontés au jumeau parent afin de vérifier la cohérence d'ensemble, de repérer les secteurs où le modèle global suffit, d'identifier ceux où un raffinement structurel éclaire réellement le système, et de préparer des stratégies de calibration ou d'incertitude plus ajustées. On obtient ainsi une architecture en cascade, où les échelles ne s'opposent pas mais se répondent.
 
 \section{Tableau de synthèse de la progression}
 
@@ -342,15 +226,7 @@ Développements suivants & Bayésien, incertitudes, multi-instances, droits et c
 
 \section{Pourquoi \hydrot{} est structurant, au fond}
 
-On peut résumer le rôle structurant de \hydrot{} en cinq points.
-
-\begin{enumerate}
-    \item \important{Il unifie} : un seul cadre pour les données, simulations, transformations et rendus.
-    \item \important{Il discipline} : un cycle de vie explicite évite les usages prématurés ou incohérents.
-    \item \important{Il prépare le passage d'échelle} : l'extraction et l'instanciation de \texttt{subTwin} ne sont pas des ajouts périphériques, mais des étapes inscrites dans la feuille de route.
-    \item \important{Il conserve la mémoire du système} : chaque niveau peut rester lié à son origine.
-    \item \important{Il ouvre la voie à une gouvernance des modèles} : plusieurs jumeaux, plusieurs simulations, plusieurs niveaux de droits, mais une même logique d'organisation.
-\end{enumerate}
+On peut résumer le rôle structurant de \hydrot{} en disant qu'il unifie, discipline, prépare le passage d'échelle, conserve la mémoire du système et ouvre la voie à une véritable gouvernance des modèles. Il unifie, parce qu'il donne un seul cadre aux données, aux simulations, aux transformations et aux rendus. Il discipline, parce qu'un cycle de vie explicite évite les usages prématurés ou incohérents. Il prépare le passage d'échelle, parce que l'extraction et l'instanciation de \texttt{subTwin} ne sont pas des ajouts périphériques, mais des étapes inscrites dans la feuille de route. Il conserve la mémoire du système, parce que chaque niveau peut rester lié à son origine. Enfin, il ouvre la voie à une gouvernance des modèles, parce qu'il rend pensable la coexistence de plusieurs jumeaux, de plusieurs simulations et de plusieurs niveaux de droits à l'intérieur d'une même logique d'organisation.
 
 Ainsi, \hydrot{} est structurant non seulement parce qu'il ordonne un code, mais parce qu'il ordonne une pratique scientifique et opérationnelle.
 
