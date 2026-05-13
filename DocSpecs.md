@@ -56,7 +56,7 @@ build/
 - Document classes in use:
   - `book` for `MASTER.tex`
   - `article` for standalone documents (`HTAS_user_guide.tex`, `HTAS_FR.tex`)
-- `MASTER.tex` language is configured through `Setup/Packages.tex` (currently French with `babel`, UTF-8, and T1 encoding). Standalone `.tex` files may define their own language setup.
+- `MASTER.tex` language is configured through `Setup/Packages.tex` (`babel`, UTF-8, and T1 encoding). Standalone `.tex` files may define their own language setup.
 - Shared typography/layout conventions are defined in `Setup/Packages.tex`:
   - `mathpazo`, `microtype`, `geometry`, `fancyhdr`, `fncychap`, `minitoc`, `listings`, `minted`.
 - Shared semantic shortcuts are defined in `Setup/Shortcuts.tex` (for example `\hydrot`, `\cw`, `\cwv`, `\script{}`).
