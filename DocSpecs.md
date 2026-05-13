@@ -66,7 +66,7 @@ This reflects the current repository policy: generated PDFs are treated as build
 
 ## Compiler and build requirements
 - Use `pdflatex` as baseline compiler.
-- Because `minted` is used in shared packages, compilation should support shell escape.
+- Because `minted` is used in shared packages, compilation should support shell escape (`minted` calls the external Pygments process for syntax highlighting).
 
 ### Required commands
 ```bash
