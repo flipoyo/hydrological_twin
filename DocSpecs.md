@@ -85,6 +85,6 @@ pdflatex -shell-escape -interaction=nonstopmode HTAS_FR.tex
 The project supports compiling multiple independent entry files:
 - `MASTER.tex` (full White Book),
 - `HTAS_user_guide.tex` (standalone user guide),
-- `HTAS_FR.tex` (standalone French document).
+- `HTAS_FR.tex` (standalone French-language strategy/progress document for HydrologicalTwin).
 
 An agent reproducing this repository must keep these entry points independent and compilable separately.
