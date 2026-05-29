@@ -1,0 +1,33 @@
+.slidev-layout {
+  background-color: white;
+}
+
+.slidev-layout h1 {
+  color: #005b96;
+  font-weight: 700;
+}
+
+.slidev-layout h2 {
+  color: #0077b6;
+  font-weight: 600;
+}
+
+.slidev-layout h3 {
+  color: #0077b6;
+}
+
+.slidev-layout p,
+.slidev-layout li,
+.slidev-layout td,
+.slidev-layout th {
+  color: #1e293b;
+}
+
+.slidev-layout table {
+  font-size: 0.95rem;
+}
+
+.slidev-layout img {
+  margin-left: auto;
+  margin-right: auto;
+}

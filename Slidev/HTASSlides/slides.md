@@ -29,7 +29,7 @@ duration: 35min
 
 Distributed Scientific Infrastructure for Water Resources
 
-Reproducible framework EPL2.0 for environmental data integration, hydrological simulation, distributed provenance and decision support.
+Reproducible framework EPL2.0 for environmental data integration, multi-scale   hydrological simulation, distributed provenance and decision support.
 
 <div @click="$slidev.nav.next" class="mt-12 py-1" hover:bg="white op-10">
   Press Space for next page <carbon:arrow-right />
@@ -47,11 +47,18 @@ Reproducible framework EPL2.0 for environmental data integration, hydrological s
 <!--
 The last comment block of each slide will be treated as slide notes. It will be visible and editable in Presenter Mode along with the slide. [Read more in the docs](https://sli.dev/guide/syntax.html#notes)
 -->
+
+---
+layout: default
+background: white
+class: text-slate-800
+---
+
 ---
 transition: fade-out
 ---
 
-# A scientific, model agnostic, digital twin for water resources
+# A scientific, model agnostic, multi-scale, digital twin for water resources
 
 <div class="text-right text-xl">
 Observe → Analyze → Predict → Decide
@@ -68,151 +75,160 @@ Observe → Analyze → Predict → Decide
 
 <!--HydrologicalTwin transforms heterogeneous environmental datasets into actionable knowledge for sustainable water resources management.-->
 
+---
+
+# Hydrological Twin
+
+<div class="grid grid-cols-[28%_72%] gap-6 h-[78%]">
+
+<div class="flex flex-col justify-center">
+
+<div class="text-xl text-sky-700 font-semibold mb-6">
+
+A scientific, model-agnostic, multi-scale digital twin for water resources
+
+</div>
+
+<div class="text-base text-slate-600 leading-relaxed">
+
+• Hydrosystems
+
+• Multi-Scale
+
+• HPC
+
+• Traceability
+
+• Sovereignty
+
+• Decision Support
+
+</div>
+
+</div>
+
+<div class="flex justify-end items-center h-full">
+
+<img
+  src="./figures/InfographieHydrologicalTwin.png"
+  class="h-full max-h-[650px] object-contain"
+/>
+
+</div>
+
+</div>
+
+
 
 ---
 
-# End-to-End Workflow
+# Pipeline
 
-```mermaid
-flowchart LR
+<div class="grid grid-cols-[45%_55%] gap-8 items-center">
 
-A[Environmental Data]
---> B[Scientific Processing]
-
-B --> C[HTAS Core]
-
-C --> D[Hydrological Models]
-
-D --> E[Analysis & Indicators]
-
-E --> F[Decision Support]
-```
-
----
-
-# Data Ecosystem
-
-## Multi-Source Inputs
-
-| Domain         | Examples                       |
-| -------------- | ------------------------------ |
-| Climate        | SAFRAN, ERA5                   |
-| Hydrology      | River discharge, water quality |
-| Groundwater    | ADES, piezometry               |
-| Land Use       | CORINE Land Cover              |
-| Geology        | BRGM                           |
-| Socio-economic | Population, water demand       |
-
----
-
-# Scientific Processing Layer
+<div>
 
 ## Model-Agnostic Preprocessing
 
 ```mermaid
-flowchart LR
+flowchart TD
 
 A[CawSAR]
-B[Hydrowatershed]
+B[HydroWatershed]
 C[QGridder]
 
 A --> D[Standardized Objects]
 B --> D
 C --> D
 ```
+</div>
 
-### Responsibilities
+<div class="flex justify-center mt-4">
 
-* Meteorological forcing generation
-* Watershed delineation
-* HRU generation
-* Numerical mesh construction
-* Data harmonization
+<img
+  src="./figures/multiEchelle.png"
+  class="w-62%"
+/>
 
----
+</div>
 
-# HTAS Core
 
-## HydrologicalTwinAlphaSeries
+</div>
 
-The canonical orchestration layer.
-
-```text
-Domain
- ├── Compartments
- │    ├── Meshes
- │    └── Observations
- │
- └── Time Framework
-      ├── Start Date
-      ├── End Date
-      └── Timestep
-```
-
-### Responsibilities
-
-* Aggregate datasets
-* Manage metadata
-* Prepare simulation environments
-* Coordinate workflows
-* Expose APIs
-* Guarantee reproducibility
-
----
-
-# Simulation Layer
-
-## Model-Specific Components
+## CaWaQS Orchestration Loop
 
 ```mermaid
 flowchart LR
 
-A[CawFormatter]
---> B[CawLauncher]
+D[Standardized Objects]
+F[HydrologicalTwin]
+E[CawFormatter]
+G[CawOrchestrator]
+C[CaWaQS Core]
 
-B --> C[CaWaQS]
+D --> F
+F --> E
+E --> G
+G --> C
+C --> F
 
-C --> D[CawManager]
+V[CaWaQS-ViZ]
+
+F -. HTTPS API .-> V
+
+classDef twin fill:#005b96,color:white,stroke:#005b96
+classDef gui fill:#d9edf7,stroke:#31708f
+class F twin
+class V gui
 ```
-
-### CaWaQS
-
-Physically-based distributed hydrological model
-
-* Surface water
-* Unsaturated zone
-* Groundwater
-* River-aquifer interactions
-* Calibration
-* Uncertainty assessment
 
 ---
 
-# Distributed Provenance
+# ComplexGitSync
 
-## ComplexGitSync
+<div class="grid grid-cols-[65%_35%] gap-8 items-center">
+
+<div>
 
 ```mermaid
 flowchart LR
-
-R1[Repository]
-R2[Repository]
-R3[Repository]
 
 CGS[ComplexGitSync]
 
-R1 <--> CGS
-R2 <--> CGS
-R3 <--> CGS
+CGS <--> P[GitTree]
+
+P --> R1[Parent]
+P --> R2[Parent]
+
+R1 --> R11[Leaf]
+R1 --> R12[Leaf]
+R1 --> R13[Leaf]
+
+R2 --> R21[Leaf]
+R2 --> R22[Parent]
+
+R22 --> R221[Repo]
+R22 --> R222[Repo]
+
+classDef cgs fill:#005b96,color:white,stroke:#005b96
+class CGS cgs
 ```
 
-### Guarantees
+</div>
 
-* Provenance
-* Synchronization
-* Traceability
-* Versioning
-* Reproducibility
+<div>
+
+### Ensures
+
+- Provenance
+- Synchronization
+- Traceability
+- Versioning
+- Reproducibility
+
+</div>
+
+</div>
 
 ---
 
@@ -303,47 +319,62 @@ Explore long-term hydroclimatic scenarios.
 
 # Expected Outcomes
 
-```mermaid
-flowchart TD
-
-A[Data]
---> B[Information]
-
-B --> C[Simulation]
-
-C --> D[Knowledge]
-
-D --> E[Decision]
-```
-
-### Impact
-
-* Water security
-* Risk anticipation
-* Sustainable allocation
-* Ecosystem preservation
-* Climate adaptation
-* Territorial resilience
-
----
-
-# HydrologicalTwin
-
-### Distributed Scientific Infrastructure for Water Resources
+<div class="grid grid-cols-3 gap-8 mt-12">
 
 <div class="text-center">
 
-Observe → Analyze → Predict → Decide
+## 💧
+
+### Water Security
+
+</div>
+
+<div class="text-center">
+
+## 🌍
+
+### Climate Adaptation
+
+</div>
+
+<div class="text-center">
+
+## 🌱
+
+### Ecosystem Preservation
+
+</div>
+
+<div class="text-center">
+
+## 📈
+
+### Risk Anticipation
+
+</div>
+
+<div class="text-center">
+
+## ⚖️
+
+### Sustainable Allocation
+
+</div>
+
+<div class="text-center">
+
+## 🏛️
+
+### Territorial Resilience
+
+</div>
 
 </div>
 
 <br>
 
-Built upon:
+<div class="text-center text-2xl text-blue-700">
 
-* HTAS (HydrologicalTwinAlphaSeries)
-* CaWaQS
-* ComplexGitSync
-* CaWaQS-ViZ
+From environmental data to actionable knowledge
 
-to deliver reproducible scientific digital twins for water resources management.
+</div>

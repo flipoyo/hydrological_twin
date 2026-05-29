@@ -1,0 +1,35 @@
+# Node
+node_modules/
+
+# Vite / Slidev cache
+.vite/
+.slidev/
+.vite-inspect
+.remote-assets
+
+# Auto-generated typings
+components.d.ts
+
+# Logs
+*.log
+
+# Local configuration
+*.local
+
+# Build outputs
+dist/
+
+# Exports
+*.pdf
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Do not use them
+netlify.toml
+vercel.json
