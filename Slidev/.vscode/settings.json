@@ -1,8 +1,0 @@
-{
-    "slidev.include": [
-        "**/slides.md",
-        "slides.md",
-        "slidesINI.md",
-        "slides.md"
-    ]
-}
