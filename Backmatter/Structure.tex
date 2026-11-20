@@ -1,7 +1,12 @@
 \section{Workflow from QGIS to CaWaQS Output}
 
-This diagram describes the typical execution flow when a user triggers a computation in the CaWaQS-ViZ QGIS plugin.  
-It highlights how the shared \texttt{HydrologicalTwin} instance, created once in \texttt{ExploreData}, propagates through all dialogs and backend services.
+% This appendix describes the code of HydrologicalTwinAlphaSeries as it is.
+% src/ is the reference: tests/unit/test_docs_sync.py fails when a name
+% written here is not in src/.
+
+This diagram describes the execution flow when a user triggers a computation
+in the \cwv\ QGIS plugin. One \texttt{HydrologicalTwinClient}, built once per
+project, serves every dialog; it holds the project's \texttt{HydrologicalTwin}.
 
 \begin{center}
 \begin{tikzpicture}[
@@ -11,131 +16,67 @@ It highlights how the shared \texttt{HydrologicalTwin} instance, created once in
 ]
 
 % Nodes
-\node[box] (qgis) {QGIS Plugin / GUI};
-\node[box, below of=qgis] (explore) {ExploreData (initialization)};
-\node[box, below of=explore] (ht) {HydrologicalTwin (HT) Singleton};
-\node[box, left of=ht, xshift=-8cm] (dialogs) {Dialog Scripts (Plot, Stats, Compare, etc.)};
-\node[box, below of=ht] (services) {Manage Services: Temporal, Budget, Spatial};
-\node[box, below of=services, yshift=-1cm] (ca) {CaWaQS Simulation Outputs};
-\node[box, left of=ca, xshift=-6cm] (obs) {Observation Files};
+\node[box] (qgis) {\cwv\ dialog (budget, regime, maps, sim/obs, criteria, masks)};
+\node[box, below of=qgis] (client) {HydrologicalTwinClient (one per project)};
+\node[box, below of=client] (ht) {HydrologicalTwin: nine macro-verbs, dispatch on kind};
+\node[box, below of=ht] (services) {Services: Temporal, Budget, Spatial, Operator, Renderer};
+\node[box, below of=services, yshift=-1cm] (ca) {CaWaQS outputs and NumPy cache};
+\node[box, left of=ca, xshift=-6cm] (obs) {Observation files};
+\node[box, left of=ht, xshift=-6cm] (files) {Files written: PNG, PDF, HTML, GeoPackage, NumPy};
 
 % Arrows
-\draw[arrow] (qgis) -- (explore) node[midway, right] {start session};
-\draw[arrow] (explore) -- (ht) node[midway, right] {instantiate HT};
-\draw[arrow] (ht) -- (dialogs) node[midway, above] {shared reference};
-\draw[arrow] (dialogs) -- (services) node[midway, left] {call HT API};
+\draw[arrow] (qgis) -- (client) node[midway, right] {one method per operation};
+\draw[arrow] (client) -- (ht) node[midway, right] {chain of verbs};
+\draw[arrow] (ht) -- (services) node[midway, right] {computations};
 \draw[arrow] (services) -- (ca) node[midway, right] {read sim data};
 \draw[arrow] (services) -- (obs) node[midway, left] {read obs data};
-\draw[arrow] (ca) -- (dialogs) node[midway, below, sloped] {data for UI plots};
-\draw[arrow] (obs) -- (dialogs) node[midway, below, sloped] {obs for stats/plots};
+\draw[arrow] (services) -- (files) node[midway, below, sloped] {render, export};
+\draw[arrow] (client) to[bend right=30] node[midway, left] {typed result} (qgis);
 
 \end{tikzpicture}
-%\caption{
-%        Workflow from QGIS to CaWaQS output.
-%        \textbf{Public users} (gray path) are limited to the \textit{Rendering} layer.
-%        \textbf{Private-key users} (blue path) access full functionality, with actions %logged for traceability.
-%    }
-
 \end{center}
-% --- NOUVELLE VERSION DE 3.3.1 ---
+
 \subsection{Description of Workflow Steps}
 \label{sec:workflow-steps}
 
-The workflow from QGIS to CaWaQS output is structured to enforce \textbf{access control} and \textbf{reproducibility} at every stage. Figure~\ref{fig:workflow-keys} illustrates the process, with distinct paths for public and private-key users.
-
 \begin{enumerate}
 
-    \item \textbf{QGIS Plugin / UI}
-    The user interacts with the QGIS interface and triggers an action (e.g., plot simulation, compare sim/obs, calculate statistics). The plugin initializes the session and checks the user's access level:
-    \begin{itemize}
-        \item \textbf{Public users} (no private-key) are restricted to visualization and masked data.
-        \item \textbf{Private-key users} unlock full functionality, including data extraction and simulation execution.
-    \end{itemize}
-
-    \item \textbf{ExploreData Initialization}
-    Upon project load, \texttt{ExploreData.get\_instance()} is called, constructing a \texttt{HydrologicalTwin} instance with the project configuration. The frontend then drives the backend through the canonical macro API:
+    \item \textbf{Project load.} When a project is opened, the plugin builds one
+    client for it. The client creates, configures and loads its twin:
     \begin{verbatim}
-        twin.configure(mode="private", key="user_key.pem")  # Private access
-        twin.load(kind="project_state")
+client = HydrologicalTwinClient.build(
+    metadata,
+    configure_kwargs=configure_kwargs,
+    load_kwargs={"geo_provider": geo_provider},
+)
     \end{verbatim}
+    \texttt{load} builds each compartment from the layers the plugin's layer
+    provider serves, and decodes the \cw\ binary outputs into the NumPy cache.
 
-    \item \textbf{HydrologicalTwin Singleton}
-    The \texttt{HydrologicalTwin} instance encapsulates all backend services and domain objects. It acts as a gatekeeper:
-    \begin{itemize}
-        \item Validates private-keys for restricted operations.
-        \item Logs all actions with user-specific metadata.
-        \item Enforces consistency across dialogs and simulations.
-    \end{itemize}
-    The instance is stored in \texttt{ExploreData} and reused by all dialogs.
+    \item \textbf{Dialog.} When the user runs a dialog (for example,
+    "Compare Sim/Obs"), the dialog calls one client method, such as
+    \texttt{compare\_sim\_obs}, with the options the user chose.
 
-    \item \textbf{Dialog Scripts}
-    When a user activates a dialog (e.g., "Compare Sim/Obs"), the dialog retrieves the shared \texttt{HydrologicalTwin} instance and checks permissions:
-    \begin{verbatim}
-        self.hydro_twin = self.exd.hydro_twin
-        if dialog.requires_private_access and not self.hydro_twin.has_key():
-            raise PermissionError("Private-key required for this operation.")
-    \end{verbatim}
-    Dialogs call only the canonical \texttt{HydrologicalTwin} macro methods (e.g., \texttt{describe}, \texttt{extract}, \texttt{transform}, \texttt{render}).
+    \item \textbf{Client.} The method chains the verbs the operation needs,
+    typically \texttt{fetch}, then \texttt{transform}, then \texttt{render} or
+    \texttt{export}, each with its \texttt{kind}.
 
-    \item \textbf{Private-Key Validation}
-    For restricted operations (e.g., data extraction, parameter modification), the twin verifies the user's private-key:
-    \begin{itemize}
-        \item If valid, the operation proceeds, and results are cryptographically logged.
-        \item If invalid, the twin raises an error:
-        \begin{verbatim}
-        Error: Private-key required for this operation.
-        \end{verbatim}
-    \end{itemize}
+    \item \textbf{Façade.} \texttt{HydrologicalTwin} checks that the twin is
+    \texttt{LOADED}, builds the request, and routes it on its \texttt{kind}
+    through \texttt{dispatch.py}.
 
-    \item \textbf{Manage.* Services}
-    The twin delegates tasks to internal services (\texttt{Manage.Temporal}, \texttt{Manage.Budget}, \texttt{Manage.Spatial}) with access control:
-    \begin{itemize}
-        \item \textbf{Public operations} (e.g., rendering maps):
-        \begin{verbatim}
-            data = twin.extract(kind="spatial_map", request=request)
-        \end{verbatim}
-        \item \textbf{Private operations} (e.g., raw data extraction):
-        \begin{verbatim}
-            data = twin.extract(kind="timeseries", request=request)  # Requires private-key
-        \end{verbatim}
-    \end{itemize}
-    Services perform:
-    \begin{itemize}
-        \item Temporal/spatial aggregation (e.g., annual mean, catchment-level averages).
-        \item Budget calculations and statistical analyses.
-        \item GIS-based spatial operations (e.g., catchment cell extraction).
-    \end{itemize}
+    \item \textbf{Services.} \texttt{Temporal} reads the cache and the
+    observation files and aggregates in time; \texttt{Budget} computes
+    budgets; \texttt{Spatial} finds catchment and outcropping cells;
+    \texttt{Operator} and \texttt{Comparator} compute; \texttt{Renderer} draws
+    the figures; \texttt{export} writes NumPy and GeoPackage files.
 
-    \item \textbf{CaWaQS Simulation Output Files}
-    Backend services read CaWaQS binary outputs (\texttt{*.bin}) and convert them to NumPy hypercubes. Private-key users access full-resolution data; public users receive masked subsets.
-
-    \item \textbf{Observation Files}
-    Observed time series (\texttt{*.dat}) are aligned with simulation periods. Access is restricted based on user permissions:
-    \begin{itemize}
-        \item Public: Pre-computed statistics or aggregated time series.
-        \item Private: Raw observational data.
-    \end{itemize}
-
-    \item \textbf{Metadata Verification}
-    Before returning results, the twin verifies:
-    \begin{itemize}
-        \item Consistency of \texttt{GitSynchroRecord} hashes for code, data, and parameters.
-        \item Cryptographic signatures for private actions.
-    \end{itemize}
-    Inconsistencies trigger:
-    \begin{verbatim}
-    Error: Metadata mismatch. Data or code may have been altered.
-    \end{verbatim}
-
-    \item \textbf{Back to Dialog}
-    The dialog receives processed data and updates the UI:
-    \begin{itemize}
-        \item Plots, tables, or PDF/HTML exports for public users.
-        \item Raw data, advanced statistics, or simulation controls for private-key users.
-    \end{itemize}
-    All private actions are logged with the user's key fingerprint.
+    \item \textbf{Back to the dialog.} The client returns a typed result, for
+    instance a \texttt{CompareSimObsResult} with \texttt{pdf\_path} or
+    \texttt{html\_path}, and the dialog displays the files it names.
 
 \end{enumerate}
 
-
-% --- FIN DE LA SECTION ---
+The access-control and provenance steps of the \hydrot\ target (private keys,
+logged actions, verification of Git-synchronised records) are described in
+Part~I; HTAS does not perform them.

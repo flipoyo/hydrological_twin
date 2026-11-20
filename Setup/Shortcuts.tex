@@ -22,6 +22,18 @@
 % Useful shortcuts
 %
 \def\hydrot{\script{HydrologicalTwin}}
+
+% A chapter that describes the HydrologicalTwin target, which
+% HydrologicalTwinAlphaSeries does not implement, opens with \htastarget.
+% The drift tests (tests/unit/test_docs_sync.py) let only such a chapter use
+% the target's vocabulary.
+\newcommand{\htastarget}{%
+  \par\noindent\fbox{\parbox{\dimexpr\linewidth-2\fboxsep-2\fboxrule}{\small
+  \textbf{Target framework.} This chapter describes the \hydrot\ framework as
+  it is designed. \texttt{HydrologicalTwinAlphaSeries} implements only part of
+  it; what it implements is described in
+  Chapter~\ref{chap-proto-hydrotwin}.}}\par\medskip}
+
 \newcommand{\genversion}{$\alpha.x$}
 \newcommand{\cwl}{CaWaQS-Loing~}
 \newcommand{\cw}{CaWaQS~} 

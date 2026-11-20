@@ -13,6 +13,9 @@
 \setlength{\parskip}{9pt}
 \vspace{-1cm}
 
+\htastarget
+
+
 % -------------------------------------------------------------
 
 \section*{Executive Summary}
@@ -140,8 +143,8 @@ The operational deployment of \hydrot\ as the monolithic backend for the CaWaQS-
 \begin{itemize}
 \item a standalone monolithic backend façade exposed as \texttt{HydrologicalTwin}
 \item read-only visualization and exploratory analysis capabilities
-\item a canonical seven-method public contract: \texttt{configure}, \texttt{load}, \texttt{describe}, \texttt{extract}, \texttt{transform}, \texttt{render}, and \texttt{export}
-\item lightweight persistence for public workflows
+\item a canonical public contract of nine macro-verbs: \texttt{configure}, \texttt{load}, \texttt{describe}, \texttt{fetch}, \texttt{mask}, \texttt{transform}, \texttt{assemble}, \texttt{render}, and \texttt{export}
+\item a client, \texttt{HydrologicalTwinClient}, with one method per \cwv\ operation, and the \texttt{htas} command line
 \item a unified data access API abstracting binary format complexities while remaining reusable outside the QGIS code base
 \end{itemize}
 
@@ -149,17 +152,17 @@ The operational deployment of \hydrot\ as the monolithic backend for the CaWaQS-
 
 The backend implements four critical design patterns:
 
-\textbf{Singleton Pattern}: A single \texttt{HydroTwin} instance per QGIS session eliminates state coherence issues and provides consistent data access across multiple plugin dialogs.
+\textbf{One twin per project}: a single \texttt{HydrologicalTwin} instance, held by a \texttt{HydrologicalTwinClient}, gives every plugin dialog the same state and the same data access.
 
-\textbf{Canonical Macro API}: A stable seven-method contract (\texttt{configure}, \texttt{load}, \texttt{describe}, \texttt{extract}, \texttt{transform}, \texttt{render}, \texttt{export}) keeps frontend integrations independent from deleted transition helpers and internal delegation paths.
+\textbf{Canonical Macro API}: a stable contract of nine macro-verbs (\texttt{configure}, \texttt{load}, \texttt{describe}, \texttt{fetch}, \texttt{mask}, \texttt{transform}, \texttt{assemble}, \texttt{render}, \texttt{export}), each choosing its work by a \texttt{kind}, keeps frontend integrations independent from internal delegation paths.
 
 \textbf{Separation of Concerns}: Distinct layers handle binary I/O (Data Access), pure NumPy operations (Computational), statistics and mass balance (Analysis), and visualization rendering (Rendering Layer).
 
-\textbf{QGIS Independence}: The \texttt{GeoDataProvider} abstraction decouples HydroTwin from QGIS-specific data structures, enabling standalone deployment and alternative frontend integration.
+\textbf{QGIS Independence}: the twin reads GIS layers through a layer provider (the \texttt{GeoLayerProvider} protocol); \cwv\ supplies one backed by QGIS, and \texttt{FileGeoProvider} reads files, enabling standalone deployment and alternative frontend integration.
 
 \subsection{Performance Optimization}
 
-Vectorized NumPy-based I/O operations reduce data read times by orders of magnitude compared to sequential access patterns. Deferred conversion to GeoDataFrame structures minimizes memory footprint. Binary format optimization with intelligent chunking supports datasets exceeding available RAM through memory-mapped access patterns.
+CaWaQS binary outputs are decoded once, at \texttt{load}, into a NumPy cache on disk (\texttt{.npy} files); every later read is a cache read. Computations run on NumPy arrays, and conversion to GeoDataFrame structures is deferred to the products that need geometry.
 
 \subsection{Operational Workflow}
 
@@ -217,11 +220,12 @@ The operational alpha implementation provides:
 \begin{itemize}
 \item Monolithic backend architecture with unified API
 \item QGIS-independent design enabling alternative frontends
-\item Binary file I/O with vectorization and memory optimization
-\item Comprehensive temporal and spatial transformation operators
-\item Statistical analysis suite (NSE, RMSE, KGE, PBIAS)
-\item Mass balance computation and conservation verification
-\item Public visualization modes through rendering layer
+\item Binary file I/O with an on-disk NumPy cache
+\item Temporal and spatial transformation operators
+\item Statistical criteria at observation points (NSE, RMSE, KGE, PBIAS)
+\item Water budgets, hydrological regimes and aquifer balances
+\item Polygon selections of a domain, with their river and aquifer boundary fluxes, exported as GeoPackages
+\item Figures through the rendering layer (PNG, PDF, interactive HTML)
 \end{itemize}
 
 \subsection{Active Development}

@@ -32,9 +32,14 @@
 \newcommand{\caw}{\texttt{CaWaQS}}
 \newcommand{\cawversion}{3.57}
 \newcommand{\cwvversion}{000.11}
-\newcommand{\htversion}{000.alpha.12}
 \newcommand{\eauspra}{\texttt{EAU SPRA}}
 \newcommand{\important}[1]{\textbf{#1}}
+% Ce document décrit la cible HydrologicalTwin ; voir tests/unit/test_docs_sync.py.
+\newcommand{\htastarget}{%
+  \par\noindent\fbox{\parbox{\dimexpr\linewidth-2\fboxsep-2\fboxrule}{\small
+  \textbf{Cadre cible.} Ce document décrit \hydrot{} tel qu'il est conçu.
+  \alphaht{} n'en implémente qu'une partie : sa description fait foi dans le
+  guide utilisateur (\texttt{HTAS\_user\_guide.tex}).}}\par\medskip}
 
 \setlength{\parindent}{0pt}
 \setlength{\parskip}{0.75em}
@@ -56,6 +61,8 @@
 \begin{document}
 
 \maketitle
+
+\htastarget
 
 \begin{center}
 \small\textit{Adresse projet : }\href{mailto:hydrologicaltwin@minesparis.psl.eu}{hydrologicaltwin@minesparis.psl.eu}
@@ -122,13 +129,13 @@ La classe \hydrot{} décrit un cycle de vie explicite :
 \texttt{EMPTY $\rightarrow$ CONFIGURED $\rightarrow$ LOADED $\rightarrow$ READY}
 \end{center}
 
-Pour une personne peu technique, ce cycle se lit presque comme une mise en route. D'abord, le jumeau existe en puissance, encore vide de tout contenu utile ; puis il reçoit sa géométrie, son projet, ses chemins de données et ses options générales ; ensuite viennent le chargement effectif des ressources nécessaires ; enfin, l'ensemble atteint un état de disponibilité où les transformations, les visualisations et les exports peuvent être produits de manière légitime.
+Pour une personne peu technique, ce cycle se lit presque comme une mise en route. D'abord, le jumeau existe en puissance, encore vide de tout contenu utile ; puis il reçoit sa géométrie, son projet, ses chemins de données et ses options générales ; ensuite viennent le chargement effectif des ressources nécessaires, après lequel lectures, sélections, transformations, visualisations et exports peuvent être produits de manière légitime. Le dernier état, \texttt{READY}, est réservé à des vérifications de cohérence à venir : aucune opération n'y conduit encore.
 
 Ce point est structurant car il impose une discipline. On ne lance pas n'importe quelle opération n'importe quand. Le jumeau sait dans quel état il se trouve et quelles actions sont légitimes à chaque étape.
 
 \subsection{Des services publics lisibles}
 
-La feuille de route souligne d'abord trois services publics très lisibles sur le cycle de vie : \texttt{configure}, \texttt{load} et \texttt{describe}. Une fois le jumeau dans l'état \texttt{READY}, la série Alpha met en avant trois autres familles d'action : \texttt{transform}, \texttt{render} et \texttt{export}. En langage métier, la séquence devient presque naturelle : on définit le cadre du système étudié, on ouvre réellement les données et les résultats, on regarde ce que contient le jumeau, on calcule des indicateurs ou des changements d'échelle, on produit des cartes et des vues interprétables, puis on sort les résultats vers des formats utilisables.
+La classe expose neuf services, ou macro-verbes. Trois accompagnent le cycle de vie : \texttt{configure}, \texttt{load} et \texttt{describe}. Une fois le jumeau chargé (état \texttt{LOADED}), six autres agissent sur ses compartiments : \texttt{fetch} (lire), \texttt{mask} (sélectionner par un polygone), \texttt{transform} (calculer), \texttt{assemble} (mettre en forme), \texttt{render} (dessiner) et \texttt{export} (écrire des fichiers de données). En langage métier, la séquence devient presque naturelle : on définit le cadre du système étudié, on ouvre réellement les données et les résultats, on regarde ce que contient le jumeau, on calcule des indicateurs ou des changements d'échelle, on produit des cartes et des vues interprétables, puis on sort les résultats vers des formats utilisables.
 
 Même sans connaissance informatique avancée, cette organisation montre déjà ce qui fait la force de \hydrot{} : il rend pleinement explorable les simulations issues de la modélisation à base physique. Il décuple le potentiel de modèles hydrologiques comme \caw{} en offrant une interface utilisateur intuitive pour l'exploration des données, la visualisation des résultats et l'exportation des informations pertinentes. En d'autres termes, \hydrot{} transforme un modèle numérique puissant mais souvent difficile à manipuler en un outil accessible et exploitable pour les professionnels de l'eau, facilitant ainsi la prise de décision éclairée.
 

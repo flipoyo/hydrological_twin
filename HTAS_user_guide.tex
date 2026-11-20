@@ -3,12 +3,17 @@
 \usepackage[T1]{fontenc}
 \usepackage[utf8]{inputenc}
 \usepackage{hyperref}
+\usepackage{booktabs}
+\usepackage{tabularx}
 
-% Written by `pixi run bump-version`; never edit by hand.
-\def\version{1.0.1}
+\def\version{1.0.2}
 \def\alphaht{\texttt{HydrologicalTwinAlphaSeries}}
 
-\title{\alphaht\version{} -- User Guide}
+% This guide describes HydrologicalTwinAlphaSeries as its source code is.
+% src/ is the reference: tests/unit/test_docs_sync.py fails when a name, a
+% keyword argument or a kind written here is not in src/.
+
+\title{\alphaht\ \version{} -- User Guide}
 \author{hydrologicaltwin@minesparis.psl.eu}
 \date{\today}
 
@@ -18,42 +23,147 @@
 
 \section{Purpose}
 
-This document explains how to use HydrologicalTwinAlphaSeries (HTAS) from its
-public front API only. The intended audience is an external consumer such as a
-frontend, a workflow script, or a documentation example.
-
-The only supported public entry point is the \texttt{HydrologicalTwin} facade
-and its macro-methods:
+This guide explains how to use HydrologicalTwinAlphaSeries (HTAS) through its
+public interface. HTAS reads the outputs of a CaWaQS simulation and computes on
+them: water budgets, hydrological regimes, spatial maps, simulation against
+observations with statistical criteria, and selections of a domain by a
+polygon. It can be driven at three levels:
 
 \begin{itemize}
-    \item \texttt{configure}
-    \item \texttt{load}
-    \item \texttt{describe}
-    \item \texttt{fetch}
-    \item \texttt{transform}
-    \item \texttt{render}
-    \item \texttt{export}
+    \item \textbf{the command line}, \texttt{htas} (Section~\ref{sec:cli});
+    \item \textbf{the client}, \texttt{HydrologicalTwinClient}: one method per
+    CaWaQS-ViZ operation (Section~\ref{sec:client});
+    \item \textbf{the façade}, \texttt{HydrologicalTwin}: nine macro-verbs, each
+    choosing its work by a \texttt{kind} (Section~\ref{sec:facade}).
 \end{itemize}
 
-Do not drive HTAS through internal classes from \texttt{domain/},
-\texttt{services/}, \texttt{tools/}, or private helper methods.
+Do not drive HTAS through \texttt{domain/}, \texttt{services/},
+\texttt{tools/}, or private helper methods.
 
 \section{Installation}
 
+HTAS runs through Pixi:
+
 \begin{verbatim}
 pixi install
+pixi run htas --version
 \end{verbatim}
 
-To activate the repository workflow described in the project README:
+Run Python examples with \texttt{pixi run python}, or from a Pixi shell.
+
+% ==================================================================
+
+\section{The command line}\label{sec:cli}
 
 \begin{verbatim}
-pixi run dev-setup
+pixi run htas detect run /data/OUT_CAW --write htas.toml
+pixi run htas detect neighbors /data/project.qgz --write htas.toml
+pixi run htas describe --project htas.toml --layer AQ_LAYER=/data/gis/aq.gpkg
 \end{verbatim}
 
-Run the examples from the configured Pixi environment, for example through
-\texttt{pixi run python} or from an activated Pixi shell.
+\begin{center}
+\begin{tabularx}{\textwidth}{l l X}
+\toprule
+\textbf{Command} & \textbf{Calls} & \textbf{Does} \\
+\midrule
+\texttt{htas detect run} & \texttt{detect\_from\_out\_caw} & Detects a CaWaQS output directory's settings \\
+\texttt{htas detect neighbors} & \texttt{detect\_project\_neighbors} & Detects the files around a QGIS project \\
+\texttt{htas describe} & \texttt{describe} & Builds the twin and lists its compartments \\
+\bottomrule
+\end{tabularx}
+\end{center}
 
-\section{Public imports}
+\begin{itemize}
+    \item \texttt{--write FILE} saves what \texttt{detect} found into a project file, \texttt{htas.toml} by convention.
+    \item The twin is read from the project file (\texttt{--project}, or \texttt{htas.toml} in the current directory). The options \texttt{--out-caw}, \texttt{--obs-dir}, \texttt{--geometry-config}, \texttt{--years START END} and \texttt{--layer NAME=PATH} (repeatable) override it.
+    \item \texttt{--json} prints the result as JSON.
+    \item Exit codes: \texttt{0} done; \texttt{1} it ran and the answer is no (a twin in the wrong state); \texttt{2} it could not run (bad arguments, a missing or unreadable file, a directory that is not a CaWaQS run).
+    \item \texttt{htas --help} lists the commands, \texttt{htas <command> --help} gives each subcommand with an example, and a mistyped command gets a suggestion.
+\end{itemize}
+
+% ==================================================================
+
+\section{The client}\label{sec:client}
+
+\subsection{Building a client}
+
+\begin{verbatim}
+from HydrologicalTwinAlphaSeries.config import ConfigGeometry, ConfigProject
+from HydrologicalTwinAlphaSeries.ht.client import HydrologicalTwinClient
+from HydrologicalTwinAlphaSeries.services.public import FileGeoProvider
+
+config_geom = ConfigGeometry.fromJsonFile("/data/geometry.json")
+config_proj = ConfigProject.fromDict(
+    {
+        "json_path_geometries": "/data/geometry.json",
+        "projectName": "demo",
+        "cawOutDirectory": "/data/OUT_CAW",
+        "startSim": 2000,
+        "endSim": 2010,
+        "obsDirectory": "/data/OBS",
+        "regime": "Transient",
+    }
+)
+
+client = HydrologicalTwinClient.build(
+    {"project_name": "demo", "start_year": 2000, "end_year": 2010},
+    configure_kwargs={
+        "config_geom": config_geom,
+        "config_proj": config_proj,
+        "out_caw_directory": "/data/OUT_CAW",
+        "obs_directory": "/data/OBS",
+    },
+    load_kwargs={"geo_provider": FileGeoProvider({"AQ_LAYER": "/data/gis/aq.gpkg"})},
+)
+\end{verbatim}
+
+The client operations read the simulated period from the metadata: its
+\texttt{start\_year} and \texttt{end\_year} keys are required.
+\texttt{HydrologicalTwinClient.detect\_from\_out\_caw} and
+\texttt{detect\_project\_neighbors} return the settings they find, to fill
+these dictionaries. \texttt{is\_ready()} says whether the twin is loaded.
+
+\subsection{The operations}
+
+Each operation runs a whole fetch--transform--render chain and returns a typed
+result. Its keyword arguments are those of
+\texttt{operations\_client.run\_<name>}: the table lists the required ones,
+then, in brackets, the optional ones.
+
+\begin{center}
+\begin{tabularx}{\textwidth}{l X l}
+\toprule
+\textbf{Method} & \textbf{Main keyword arguments} & \textbf{Returns} \\
+\midrule
+\texttt{budget\_barplot} & \texttt{period}, \texttt{frequency}, \texttt{agg}, \texttt{pluriannual}, \texttt{output\_dir} [\texttt{variables}, \texttt{frequency\_label}, \texttt{agg\_label}] & \texttt{BudgetBarplotResult} \\
+\texttt{hydrological\_regime} & \texttt{compartment\_name}, \texttt{outtype}, \texttt{param}, \texttt{var\_label}, \texttt{units}, \texttt{savepath} [\texttt{interactive}, \texttt{staticpng}, \texttt{staticpdf}, \texttt{period}] & \texttt{HydrologicalRegimeResult} \\
+\texttt{spatial\_map\_watbal} & \texttt{param}, \texttt{period}, \texttt{frequency}, \texttt{agg}, \texttt{pluriannual}, \texttt{id\_layer} [\texttt{target\_unit}, \texttt{layer\_name\_param}, \texttt{frequency\_label}, \texttt{agg\_label}] & \texttt{SpatialMapWatbalResult} \\
+\texttt{spatial\_map\_aq} & \texttt{outtype}, \texttt{param}, \texttt{layer\_id\_offset}, \texttt{mode}, \texttt{period}, \texttt{frequency}, \texttt{agg}, \texttt{pluriannual} [\texttt{save\_directory}, \texttt{name\_prefix}, \texttt{unit}, \texttt{frequency\_label}, \texttt{agg\_label}] & \texttt{SpatialMapAqResult} \\
+\texttt{compare\_sim\_obs} & \texttt{mode} (\texttt{pdf}, \texttt{interactive}, \texttt{csv}), \texttt{compartment\_name}, \texttt{outtype}, \texttt{param}, \texttt{ylabel}, \texttt{obs\_unit}, \texttt{plot\_period}, \texttt{crit\_period}, \texttt{directory} [\texttt{id\_layer}, \texttt{aggr}, \texttt{regime}] & \texttt{CompareSimObsResult} \\
+\texttt{statistical\_criteria} & \texttt{compartment\_name}, \texttt{outtype}, \texttt{param}, \texttt{period}, \texttt{output\_dir} [\texttt{metrics}, \texttt{id\_layer}, \texttt{aggr}, \texttt{obs\_unit}] & \texttt{StatisticalCriteriaResult} \\
+\texttt{mask\_internal\_values} & \texttt{polygon}, \texttt{polygon\_crs}, \texttt{specs}, \texttt{syear}, \texttt{eyear}, \texttt{output\_dir}, \texttt{temp\_dir}, \texttt{area\_name} [\texttt{write\_geopackage}, \texttt{weighted}] & \texttt{MaskInternalValuesResult} \\
+\texttt{mask\_hyd\_boundary} & \texttt{polygon}, \texttt{polygon\_crs}, \texttt{syear}, \texttt{eyear}, \texttt{output\_dir}, \texttt{area\_name} & \texttt{MaskHydBoundaryResult} \\
+\texttt{mask\_aq\_boundary} & \texttt{polygon}, \texttt{polygon\_crs}, \texttt{syear}, \texttt{eyear}, \texttt{output\_dir}, \texttt{area\_name} [\texttt{write\_geopackage}, \texttt{temp\_dir}, \texttt{unit}] & \texttt{MaskAqBoundaryResult} \\
+\bottomrule
+\end{tabularx}
+\end{center}
+
+\begin{verbatim}
+result = client.budget_barplot(
+    period=("2000-01-01", "2010-12-31"),
+    frequency="Y",
+    agg="sum",
+    pluriannual=False,
+    output_dir="/data/out",
+)
+print(result.png_path, result.csv_path)
+\end{verbatim}
+
+% ==================================================================
+
+\section{The façade}\label{sec:facade}
+
+\subsection{Public imports}
 
 \begin{verbatim}
 from HydrologicalTwinAlphaSeries import (
@@ -64,85 +174,46 @@ from HydrologicalTwinAlphaSeries import (
 from HydrologicalTwinAlphaSeries.ht import (
     ConfigureRequest,
     DescribeRequest,
+    ExportRequest,
     FetchRequest,
     LoadRequest,
+    MaskRequest,
     RenderRequest,
     TransformRequest,
-    ExportRequest,
 )
 \end{verbatim}
 
-\section{Lifecycle}
-
-The facade has an explicit lifecycle:
+\subsection{The nine macro-verbs and the lifecycle}
 
 \begin{center}
-\texttt{EMPTY} $\rightarrow$ \texttt{CONFIGURED} $\rightarrow$ \texttt{LOADED}
+\texttt{EMPTY} $\rightarrow$ \texttt{CONFIGURED} $\rightarrow$ \texttt{LOADED} $\rightarrow$ \texttt{READY}
 \end{center}
 
 \begin{itemize}
     \item \texttt{configure} moves the twin from \texttt{EMPTY} to \texttt{CONFIGURED}.
-    \item \texttt{load} moves the twin from \texttt{CONFIGURED} to \texttt{LOADED}.
-    \item \texttt{describe}, \texttt{fetch}, \texttt{transform}, \texttt{render}, and
-    \texttt{export} require at least the \texttt{LOADED} state.
+    \item \texttt{load} moves it from \texttt{CONFIGURED} to \texttt{LOADED}.
+    \item \texttt{describe}, \texttt{fetch}, \texttt{mask}, \texttt{transform},
+    \texttt{assemble}, \texttt{render} and \texttt{export} require \texttt{LOADED}.
+    \item \texttt{READY} is reserved for consistency checks to come; no verb reaches it yet.
 \end{itemize}
 
-If methods are called too early, HTAS raises \texttt{InvalidStateError}.
+A verb called too early raises \texttt{InvalidStateError}. Each verb takes a
+request dataclass, or the same fields as keywords.
 
-\section{Step 1 --- Build configuration objects}
+\subsection{Step 1 --- Configure}
 
-HTAS expects a geometry configuration and a project configuration.
-
-\begin{verbatim}
-config_geom = ConfigGeometry.fromDict(
-    {
-        "ids_compartment": [1],
-        "resolutionNames": {1: [["AQ_LAYER"]]},
-        "ids_col_cell": {1: 0},
-        "obsNames": {},
-        "obsIdsColCells": {},
-        "obsIdsColNames": {},
-        "obsIdsColLayers": {},
-        "obsIdsCell": {},
-        "extNames": {},
-        "extIdsColNames": {},
-        "extIdsColLayers": {},
-        "extIdsColCells": {},
-    }
-)
-
-config_proj = ConfigProject.fromDict(
-    {
-        "json_path_geometries": "geometry.json",
-        "projectName": "demo",
-        "cawOutDirectory": "/path/to/CAWAQS/OUTPUTS",
-        "startSim": 2000,
-        "endSim": 2001,
-        "obsDirectory": "/path/to/OBS",
-        "regime": "annual",
-    }
-)
-\end{verbatim}
-
-\section{Step 2 --- Create and configure the facade}
-
-You can either configure the twin at construction time or call
-\texttt{configure()} explicitly.
-
-\subsection*{Constructor path}
+You can configure the twin at construction time or call \texttt{configure()}.
 
 \begin{verbatim}
 twin = HydrologicalTwin(
     config_geom=config_geom,
     config_proj=config_proj,
-    out_caw_directory=config_proj.cawOutDirectory,
-    obs_directory=config_proj.obsDirectory,
-    temp_directory="/path/to/TEMP",
-    metadata={"consumer": "front-api-example"},
+    out_caw_directory="/data/OUT_CAW",
+    obs_directory="/data/OBS",
+    temp_directory="/data/TEMP",
+    metadata={"consumer": "user-guide"},
 )
 \end{verbatim}
-
-\subsection*{Explicit request path}
 
 \begin{verbatim}
 twin = HydrologicalTwin()
@@ -150,39 +221,31 @@ twin.configure(
     request=ConfigureRequest(
         config_geom=config_geom,
         config_proj=config_proj,
-        out_caw_directory=config_proj.cawOutDirectory,
-        obs_directory=config_proj.obsDirectory,
-        temp_directory="/path/to/TEMP",
-        metadata={"consumer": "front-api-example"},
+        out_caw_directory="/data/OUT_CAW",
+        obs_directory="/data/OBS",
+        temp_directory="/data/TEMP",
     )
 )
 \end{verbatim}
 
-\section{Step 3 --- Load the project}
+\subsection{Step 2 --- Load}
 
-The production path is to load the configured compartments through the public
-\texttt{LoadRequest}. A frontend should stay at this facade level and must not
-orchestrate internal backend objects directly.
+\texttt{load} builds the compartments from the layers a layer provider
+serves, and writes the NumPy cache of the simulation outputs.
 
 \begin{verbatim}
 twin.load(
     request=LoadRequest(
-        ids_compartments=[1],
-        geo_provider=geo_provider,
+        ids_compartments=[1, 2, 3],
+        geo_provider=FileGeoProvider({"AQ_LAYER": "/data/gis/aq.gpkg"}),
     )
 )
 \end{verbatim}
 
-For smoke tests that validate only the lifecycle, an empty load is acceptable:
+Compartments are numbered as CaWaQS numbers them: \texttt{1} AQ, \texttt{2}
+HYD, \texttt{3} WATBAL, \texttt{4} NSAT.
 
-\begin{verbatim}
-twin.load(request=LoadRequest(compartments={}))
-\end{verbatim}
-
-\section{Step 4 --- Inspect the available catalog}
-
-Use \texttt{describe()} immediately after loading to discover what the frontend
-can ask for next.
+\subsection{Step 3 --- Describe}
 
 \begin{verbatim}
 description = twin.describe(request=DescribeRequest())
@@ -192,11 +255,14 @@ print(description.n_compartments)
 print(description.catalog.extract_kinds)
 print(description.catalog.transform_kinds)
 print(description.catalog.render_kinds)
+print(description.catalog.export_formats)
 \end{verbatim}
 
-\section{Step 5 --- Fetch data through stable workflow kinds}
+\subsection{Step 4 --- Fetch}
 
-\subsection*{Simulation matrix}
+Kinds: \texttt{simulation\_matrix}, \texttt{observations},
+\texttt{sim\_obs\_bundle}, \texttt{spatial\_map}, \texttt{catchment\_cells},
+\texttt{aquifer\_outcropping\_map}, \texttt{aq\_balance\_inputs}.
 
 \begin{verbatim}
 values = twin.fetch(
@@ -206,49 +272,46 @@ values = twin.fetch(
         outtype="MB",
         param="recharge",
         syear=2000,
-        eyear=2001,
-        id_layer=0,
+        eyear=2010,
     )
 )
+print(values.data.shape, values.dates[:3])
 
-print(values.data.shape)
-print(values.dates[:3])
-\end{verbatim}
-
-\subsection*{Observations}
-
-\begin{verbatim}
-observations = twin.fetch(
-    request=FetchRequest(
-        kind="observations",
-        id_compartment=1,
-        syear=2000,
-        eyear=2001,
-    )
-)
-\end{verbatim}
-
-\subsection*{Frontend bundle}
-
-\begin{verbatim}
 bundle = twin.fetch(
     request=FetchRequest(
         kind="sim_obs_bundle",
-        id_compartment=1,
+        id_compartment=2,
         outtype="Q",
         param="discharge",
         syear=2000,
-        eyear=2001,
-        compute_criteria=True,
+        eyear=2010,
     )
 )
 \end{verbatim}
 
-Other public fetch kinds are exposed by \texttt{description.catalog.extract\_kinds}.
+\subsection{Step 5 --- Mask}
 
-\section{Step 6 --- Transform fetched payloads}
+Kinds: \texttt{polygon\_cells}, \texttt{area\_values}, \texttt{boundary\_hyd},
+\texttt{boundary\_hyd\_flux}, \texttt{boundary\_aq}, \texttt{boundary\_aq\_flux}.
 
-\subsection*{Temporal aggregation}
+\begin{verbatim}
+cells = twin.mask(
+    request=MaskRequest(
+        kind="polygon_cells",
+        id_compartment=1,
+        polygon=polygon,
+        polygon_crs="EPSG:2154",
+    )
+)
+print(cells.cell_ids[:10])
+\end{verbatim}
+
+\subsection{Step 6 --- Transform}
+
+Kinds: \texttt{temporal\_aggregation}, \texttt{temporal\_aggregate},
+\texttt{spatial\_average}, \texttt{volumetric\_rescale}, \texttt{criteria},
+\texttt{budget}, \texttt{hydrological\_regime}, \texttt{runoff\_ratio},
+\texttt{aq\_balance}.
 
 \begin{verbatim}
 monthly = twin.transform(
@@ -260,65 +323,33 @@ monthly = twin.transform(
         agg_dimension="mean",
     )
 )
-\end{verbatim}
 
-\subsection*{Performance criteria}
-
-\begin{verbatim}
 criteria = twin.transform(
     request=TransformRequest(
         kind="criteria",
         bundle=bundle,
-        metrics=["nash", "bias", "rmse"],
-    )
-)
-\end{verbatim}
-
-\subsection*{Budget and hydrological regime}
-
-\begin{verbatim}
-budget = twin.transform(
-    request=TransformRequest(
-        kind="budget",
-        id_compartment=1,
-        param="recharge",
-        sdate=2000,
-        edate=2001,
-        frequency="Annual",
-        agg_dimension="mean",
+        metrics=["nash", "kge", "rmse", "pbias"],
     )
 )
 
 regime = twin.transform(
     request=TransformRequest(
         kind="hydrological_regime",
-        id_compartment=1,
+        id_compartment=2,
         outtype="Q",
         param="discharge",
         sdate=2000,
-        edate=2001,
+        edate=2010,
     )
 )
 \end{verbatim}
 
-\section{Step 7 --- Render artefacts}
+\subsection{Step 7 --- Render}
+
+Kinds: \texttt{budget\_barplot}, \texttt{hydrological\_regime},
+\texttt{sim\_obs\_pdf}, \texttt{sim\_obs\_interactive}, \texttt{aq\_flux\_diagram}.
 
 \begin{verbatim}
-budget_plot = twin.render(
-    request=RenderRequest(
-        kind="budget_barplot",
-        data={
-            "data": budget.data,
-            "date_labels": budget.date_labels,
-            "param": budget.param,
-        },
-        plot_title="Recharge budget",
-        output_folder="/path/to/output",
-        output_name="recharge_budget",
-        yaxis_unit="mm/j",
-    )
-)
-
 regime_plot = twin.render(
     request=RenderRequest(
         kind="hydrological_regime",
@@ -327,51 +358,43 @@ regime_plot = twin.render(
         month_labels=regime.month_labels,
         var="discharge",
         units="m3/s",
-        savepath="/path/to/output/regime",
+        savepath="/data/out/regime",
         interactive=False,
         staticpng=True,
         staticpdf=True,
     )
 )
-
-print(budget_plot.artefacts)
 print(regime_plot.artefacts)
 \end{verbatim}
 
-\section{Step 8 --- Export the twin}
+\subsection{Step 8 --- Assemble and export}
+
+\texttt{assemble} shapes computed blocks into a payload ready to write
+(\texttt{compartment\_bundle}, \texttt{boundary\_aq\_layers}); \texttt{export}
+writes data files, by format (\texttt{npy}, \texttt{geopackage}). It never
+computes and never draws.
 
 \begin{verbatim}
-export_result = twin.export(
+written = twin.export(
     request=ExportRequest(
-        path="/path/to/output/twin.pkl",
-        fmt="pickle",
+        kind="npy",
+        path="/data/out/recharge.npy",
+        data=values.data,
     )
 )
-
-print(export_result.path)
+print(written.path)
 \end{verbatim}
 
-\section{Recommended frontend workflow}
+GeoPackages are written by the client's mask operations with
+\texttt{write\_geopackage=True}, which assemble and export for you.
 
-\begin{enumerate}
-    \item Build \texttt{ConfigGeometry} and \texttt{ConfigProject}.
-    \item Create one \texttt{HydrologicalTwin} instance per project/session.
-    \item Call \texttt{configure}.
-    \item Call \texttt{load}.
-    \item Call \texttt{describe} to populate UI selectors and supported workflow kinds.
-    \item Use \texttt{fetch} for raw frontend-ready payloads.
-    \item Use \texttt{transform} for computations derived from fetched data.
-    \item Use \texttt{render} only when file artefacts are explicitly needed.
-    \item Use \texttt{export} to persist the loaded twin snapshot.
-\end{enumerate}
-
-\section{What the frontend should not do}
+\section{What not to do}
 
 \begin{itemize}
-    \item Do not import from \texttt{domain/}, \texttt{services/}, or private helpers.
-    \item Do not manipulate \texttt{Compartment}, \texttt{Mesh}, \texttt{Observation}, or extraction objects directly.
-    \item Do not skip lifecycle order.
-    \item Do not rely on undocumented internal methods such as \texttt{read\_values()}.
+    \item Do not import from \texttt{domain/}, \texttt{services/} or private helpers.
+    \item Do not build or change \texttt{Compartment}, \texttt{Mesh}, \texttt{Observation} or \texttt{Extraction} objects yourself.
+    \item Do not skip the lifecycle order.
+    \item Do not rely on methods not listed in this guide, such as \texttt{read\_values()}.
 \end{itemize}
 
 \section{Minimal smoke test}
@@ -382,8 +405,8 @@ twin.configure(
     request=ConfigureRequest(
         config_geom=config_geom,
         config_proj=config_proj,
-        out_caw_directory=config_proj.cawOutDirectory,
-        obs_directory=config_proj.obsDirectory,
+        out_caw_directory="/data/OUT_CAW",
+        obs_directory="/data/OBS",
     )
 )
 twin.load(request=LoadRequest(compartments={}))

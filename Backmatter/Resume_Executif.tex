@@ -13,6 +13,9 @@
 \setlength{\parskip}{9pt}
 \vspace{-1cm}
 
+\htastarget
+
+
 % -------------------------------------------------------------
 
 \hydrot\ établit un nouveau régime épistémique pour la modélisation hydrologique, remplaçant les expériences numériques faiblement couplées par des estimations synchronisées, traçables et reproductibles fondées sur la physique. Ce Livre Blanc présente une infrastructure numérique complète qui transforme la science hydrologique d'une pratique de simulations ad hoc en un processus formellement structuré d'estimation ancrée dans un continuum ontologique espace-état explicite.
@@ -115,17 +118,17 @@ Le déploiement opérationnel de \hydrot\ comme backend monolithique pour le plu
 
 Le backend implémente quatre modèles de conception critiques :
 
-\textbf{Modèle Singleton} : Une seule instance \texttt{HydroTwin} par session QGIS élimine les problèmes de cohérence d'état et fournit un accès cohérent aux données à travers plusieurs dialogues du plugin.
+\textbf{Un jumeau par projet} : une seule instance \texttt{HydrologicalTwin}, portée par un \texttt{HydrologicalTwinClient}, donne à tous les dialogues du plugin le même état et le même accès aux données.
 
-\textbf{API canonique en sept méthodes} : l'interface publique est désormais stabilisée autour de \texttt{configure}, \texttt{load}, \texttt{describe}, \texttt{extract}, \texttt{transform}, \texttt{render} et \texttt{export}, ce qui évite les aides transitoires et clarifie le contrat backend.
+\textbf{API canonique en neuf macro-verbes} : l'interface publique est stabilisée autour de \texttt{configure}, \texttt{load}, \texttt{describe}, \texttt{fetch}, \texttt{mask}, \texttt{transform}, \texttt{assemble}, \texttt{render} et \texttt{export}, chacun choisissant son travail par un \texttt{kind}, ce qui clarifie le contrat backend.
 
 \textbf{Séparation des Préoccupations} : Des couches distinctes gèrent l'I/O binaire (Accès aux Données), les opérations NumPy pures (Couche Computationnelle), les statistiques et le bilan de masse (Couche Analyse), et le rendu de visualisation (Couche de Rendu).
 
-\textbf{Indépendance QGIS} : L'abstraction \texttt{GeoDataProvider} découple HydroTwin des structures de données spécifiques à QGIS, permettant un déploiement autonome et l'intégration de frontends alternatifs.
+\textbf{Indépendance QGIS} : le jumeau lit ses couches SIG par un fournisseur de couches (le protocole \texttt{GeoLayerProvider}) ; \cwv\ en fournit un adossé à QGIS, et \texttt{FileGeoProvider} lit des fichiers, ce qui permet un déploiement autonome et l'intégration de frontends alternatifs.
 
 \subsection*{Optimisation des Performances}
 
-Les opérations d'I/O basées sur NumPy vectorisé réduisent les temps de lecture de données de plusieurs ordres de grandeur par rapport aux modèles d'accès séquentiels. La conversion différée vers les structures GeoDataFrame minimise l'empreinte mémoire. L'optimisation du format binaire avec découpage intelligent supporte des jeux de données dépassant la RAM disponible via des modèles d'accès mappés en mémoire.
+Les sorties binaires de CaWaQS sont décodées une seule fois, au \texttt{load}, dans un cache NumPy sur disque (fichiers \texttt{.npy}) ; toute lecture ultérieure est une lecture de ce cache. Les calculs portent sur des tableaux NumPy, et la conversion en GeoDataFrame est différée aux produits qui ont besoin de géométrie.
 
 \section*{Innovations Techniques}
 
