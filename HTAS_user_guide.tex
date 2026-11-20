@@ -6,7 +6,7 @@
 \usepackage{booktabs}
 \usepackage{tabularx}
 
-\def\version{1.1.0}
+\def\version{1.2.0}
 \def\alphaht{\texttt{HydrologicalTwinAlphaSeries}}
 
 % This guide describes HydrologicalTwinAlphaSeries as its source code is.
@@ -101,6 +101,26 @@ pixi run htas mask internal --polygon /data/area.gpkg \
 \end{itemize}
 
 % ==================================================================
+
+\subsection{The developer verbs: \texttt{htas-dev}}
+
+\texttt{htas-dev <verb> <kind>} calls one façade verb with one kind
+(Section~\ref{sec:facade}), the kind written with hyphens:
+
+\begin{verbatim}
+pixi run htas-dev fetch simulation-matrix --id-compartment 1 \
+    --outtype MB --param recharge --syear 2000 --eyear 2010 --output out
+pixi run htas-dev transform temporal-aggregation \
+    --data-file out/data.npy --dates-file out/dates.npy \
+    --frequency Monthly --agg-dimension mean
+\end{verbatim}
+
+\begin{itemize}
+    \item Every field of the verb's request is an option named after it (\texttt{id\_compartment} is \texttt{--id-compartment}); an option left out is not passed.
+    \item A number, text, flag or list is parsed. Any other field, such as an array or a mapping, is read from a file with \texttt{--NAME-file}: \texttt{.npy}, \texttt{.json}, or a vector file. \texttt{--polygon FILE} reads a polygon as \texttt{htas mask} does.
+    \item \texttt{--output DIR} writes each array, table and layer of the result into \texttt{DIR}, so one result can feed the next command; in \texttt{--json}, an array of more than 1000 values appears as its shape.
+    \item The twin options and the exit codes are those of \texttt{htas}. A kind that needs an in-memory result of an earlier step cannot be fed from files.
+\end{itemize}
 
 \section{The client}\label{sec:client}
 

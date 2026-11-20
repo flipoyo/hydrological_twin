@@ -194,7 +194,13 @@ command each: \texttt{htas detect run}, \texttt{htas detect neighbors} and
 \texttt{htas map aq}, \texttt{htas compare simobs}, \texttt{htas criteria compute},
 \texttt{htas mask internal}, \texttt{htas mask hyd} and \texttt{htas mask aq}).
 The twin is read from an \texttt{htas.toml} project file, which
-\texttt{htas detect run} can write, and options override it.
+\texttt{htas detect run} can write, and options override it. A second
+script, \texttt{htas-dev}, calls the developer verbs: one command per verb
+(\texttt{fetch}, \texttt{mask}, \texttt{transform}, \texttt{assemble},
+\texttt{render}, \texttt{export}) and one subcommand per kind, written with
+hyphens, as in \texttt{htas-dev fetch simulation-matrix}. Its commands and
+options are generated from the registry of kinds and from the request
+dataclasses.
 
 % --------------------------------------------------------------
 
