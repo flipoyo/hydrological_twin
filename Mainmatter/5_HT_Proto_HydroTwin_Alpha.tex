@@ -187,10 +187,14 @@ in one call; \texttt{detect\_from\_out\_caw} and
 
 \subsection{The command line}
 
-\texttt{htas}, run as \texttt{pixi run htas}, mirrors client methods:
-\texttt{htas detect run}, \texttt{htas detect neighbors} and
-\texttt{htas describe}. The twin is read from an \texttt{htas.toml} project
-file, which \texttt{htas detect run} can write, and options override it.
+\texttt{htas}, run as \texttt{pixi run htas}, mirrors client methods, one
+command each: \texttt{htas detect run}, \texttt{htas detect neighbors} and
+\texttt{htas describe}, then one command per \cwv\ operation
+(\texttt{htas budget barplot}, \texttt{htas regime show}, \texttt{htas map watbal},
+\texttt{htas map aq}, \texttt{htas compare simobs}, \texttt{htas criteria compute},
+\texttt{htas mask internal}, \texttt{htas mask hyd} and \texttt{htas mask aq}).
+The twin is read from an \texttt{htas.toml} project file, which
+\texttt{htas detect run} can write, and options override it.
 
 % --------------------------------------------------------------
 

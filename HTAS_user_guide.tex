@@ -6,7 +6,7 @@
 \usepackage{booktabs}
 \usepackage{tabularx}
 
-\def\version{1.0.2}
+\def\version{1.1.0}
 \def\alphaht{\texttt{HydrologicalTwinAlphaSeries}}
 
 % This guide describes HydrologicalTwinAlphaSeries as its source code is.
@@ -69,13 +69,32 @@ pixi run htas describe --project htas.toml --layer AQ_LAYER=/data/gis/aq.gpkg
 \texttt{htas detect run} & \texttt{detect\_from\_out\_caw} & Detects a CaWaQS output directory's settings \\
 \texttt{htas detect neighbors} & \texttt{detect\_project\_neighbors} & Detects the files around a QGIS project \\
 \texttt{htas describe} & \texttt{describe} & Builds the twin and lists its compartments \\
+\texttt{htas budget barplot} & \texttt{budget\_barplot} & Budget bar plot and CSV \\
+\texttt{htas regime show} & \texttt{hydrological\_regime} & Hydrological regime plot \\
+\texttt{htas map watbal} & \texttt{spatial\_map\_watbal} & Water-balance map \\
+\texttt{htas map aq} & \texttt{spatial\_map\_aq} & Aquifer map \\
+\texttt{htas compare simobs} & \texttt{compare\_sim\_obs} & Simulation against observations \\
+\texttt{htas criteria compute} & \texttt{statistical\_criteria} & Statistical criteria at observation points \\
+\texttt{htas mask internal} & \texttt{mask\_internal\_values} & Values of the cells inside a polygon \\
+\texttt{htas mask hyd} & \texttt{mask\_hyd\_boundary} & River reaches on a polygon's boundary \\
+\texttt{htas mask aq} & \texttt{mask\_aq\_boundary} & Aquifer faces on a polygon's boundary \\
 \bottomrule
 \end{tabularx}
 \end{center}
 
+\begin{verbatim}
+pixi run htas budget barplot --period 2000-01-01 2010-12-31 \
+    --frequency Y --agg sum --output-dir /data/out
+pixi run htas mask internal --polygon /data/area.gpkg \
+    --spec AQ:MB:recharge:m3/j --output-dir /data/out \
+    --temp-dir /data/tmp --area-name basin
+\end{verbatim}
+
 \begin{itemize}
     \item \texttt{--write FILE} saves what \texttt{detect} found into a project file, \texttt{htas.toml} by convention.
     \item The twin is read from the project file (\texttt{--project}, or \texttt{htas.toml} in the current directory). The options \texttt{--out-caw}, \texttt{--obs-dir}, \texttt{--geometry-config}, \texttt{--years START END} and \texttt{--layer NAME=PATH} (repeatable) override it.
+    \item An operation command takes the options of its client method, named after its keyword (\texttt{output\_dir} is \texttt{--output-dir}); the method's required arguments are required, and an option left out is not passed. \texttt{htas <command> <subcommand> --help} lists them. A period is two dates (\texttt{--period START END}); \texttt{--agg} is \texttt{sum}, \texttt{mean}, \texttt{max}, \texttt{min} or a quantile.
+    \item \texttt{htas mask} reads its polygon from a vector file (\texttt{--polygon FILE}, all its features merged; \texttt{--polygon-crs} if the file has no CRS) and the simulated years from the project file or \texttt{--years}. \texttt{htas mask internal} takes \texttt{--spec COMPARTMENT:OUTTYPE:PARAM:UNIT} (repeatable) or \texttt{--specs-file}, a JSON list; \texttt{htas map aq} takes \texttt{--mode KEY=VALUE} (repeatable) or \texttt{--mode-file}, a JSON object.
     \item \texttt{--json} prints the result as JSON.
     \item Exit codes: \texttt{0} done; \texttt{1} it ran and the answer is no (a twin in the wrong state); \texttt{2} it could not run (bad arguments, a missing or unreadable file, a directory that is not a CaWaQS run).
     \item \texttt{htas --help} lists the commands, \texttt{htas <command> --help} gives each subcommand with an example, and a mistyped command gets a suggestion.
